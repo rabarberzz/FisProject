@@ -1,27 +1,40 @@
-﻿using Mapsui.Styles;
+﻿using ControllerApp.Services;
+using Mapbox.Directions;
 using Mapsui;
 using Mapsui.Layers;
-using System.Timers;
+using Mapsui.UI.Maui;
 using Timer = System.Timers.Timer;
 
 namespace ControllerApp
 {
     public partial class MainPage : ContentPage
     {
-        //int count = 0;
         private MyLocationLayer locationLayer;
         private Timer locationUpdateTimer;
+        private MapControl mapControl;
+        private MapService mapService;
 
         public MainPage()
         {
             InitializeComponent();
             InitializeMap();
+            mapService = new MapService();
+            mapService.DirectionsResponseReceived += OnDirectionsReceived;
+            mapService.RequestFailed += OnHttpRequestFailed;
+
+#if WINDOWS
+            var access_token = Environment.GetEnvironmentVariable("MAPBOX_ACCESS_TOKEN");
+            if (!string.IsNullOrEmpty(access_token))
+            {
+                var configService = IPlatformApplication.Current?.Services.GetService<IConfigurationService>();
+                configService?.SetAccessToken(access_token);
+            }
+#endif
         }
 
         private async void InitializeMap()
         {
-            var mapControl = new Mapsui.UI.Maui.MapControl();
-
+            mapControl = new MapControl();
             mapControl.Map?.Layers.Add(Mapsui.Tiling.OpenStreetMap.CreateTileLayer());
 
             var currentLocation = await GetCurrentLocationAsync();
@@ -33,14 +46,14 @@ namespace ControllerApp
                 StartLocationUpdates();
             }
 
-            Content = mapControl;
+            mapControlElement.Content = mapControl; // Assign mapControl to mapControlElement
         }
 
         private async Task<MPoint> GetCurrentLocationAsync()
         {
             try
             {
-                var request = new GeolocationRequest(GeolocationAccuracy.Medium);
+                var request = new GeolocationRequest(GeolocationAccuracy.High);
                 var location = await Geolocation.GetLocationAsync(request);
 
                 if (location != null)
@@ -85,30 +98,23 @@ namespace ControllerApp
             locationUpdateTimer.Start();
         }
 
-        //private MyLocationLayer CreateLocationMarker(double latitude, double longitude)
-        //{
-        //    var point = new PointFeature(latitude, longitude);
-        //    var style = new SymbolStyle
-        //    {
-        //        SymbolScale = 0.8,
-        //        Fill = new Brush(Color.Red),
-        //        Outline = new Pen(Color.Black, 2)
-        //    };
-        //    feature.Styles.Add(style);
-        //    return feature;
-        //}
+        private void OnButtonClick(object sender, EventArgs e)
+        {
+            mapService.GetDirections();
+        }
 
-        //private void OnCounterClicked(object sender, EventArgs e)
-        //{
-        //    count++;
+        private void OnDirectionsReceived(object? sender, DirectionsResponse response)
+        {
+            var directions = response;
+            if (directions.Code != null)
+            {
+                responseEntry.Text = directions.Code;
+            }
+        }
 
-        //    if (count == 1)
-        //        CounterBtn.Text = $"Clicked {count} time";
-        //    else
-        //        CounterBtn.Text = $"Clicked {count} times";
-
-        //    SemanticScreenReader.Announce(CounterBtn.Text);
-        //}
+        private void OnHttpRequestFailed(object? sender, Exception e)
+        {
+            responseEntry.Text = e.Message;
+        }
     }
-
 }
