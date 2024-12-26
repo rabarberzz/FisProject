@@ -2,7 +2,13 @@
 using Mapbox.Directions;
 using Mapsui;
 using Mapsui.Layers;
+using Mapsui.Nts;
+using Mapsui.Styles;
 using Mapsui.UI.Maui;
+using NetTopologySuite.Features;
+using NetTopologySuite.Geometries;
+using NetTopologySuite.IO;
+using Color = Mapsui.Styles.Color;
 using Timer = System.Timers.Timer;
 
 namespace ControllerApp
@@ -109,12 +115,56 @@ namespace ControllerApp
             if (directions.Code != null)
             {
                 responseEntry.Text = directions.Code;
+                var features = PointsFromDirectionsResponse(directions);
+                var layer = CreatePointLayer(features);
+                mapControl.Map?.Layers.Add(layer);
             }
         }
 
         private void OnHttpRequestFailed(object? sender, Exception e)
         {
             responseEntry.Text = e.Message;
+        }
+
+        private static MemoryLayer CreatePointLayer(IEnumerable<Mapsui.IFeature> features)
+        {
+            return new MemoryLayer
+            {
+                Name = "Points",
+                Features = features,
+                Style = Mapsui.Styles.SymbolStyles.CreatePinStyle(),
+            };
+        }
+
+        private static IEnumerable<Mapsui.IFeature> PointsFromDirectionsResponse(DirectionsResponse directions)
+        {
+            var points = directions.Routes.FirstOrDefault()?.Geometry;
+            var features = new List<Mapsui.IFeature>();
+
+            if (points != null)
+            {
+                foreach (var point in points)
+                {
+                    var tempMPoint = new MPoint(point.y, point.x);
+                    var feature = new PointFeature(Mapsui.Projections.SphericalMercator.FromLonLat(tempMPoint));
+                    features.Add(feature);
+                }
+            }
+
+            return features;
+        }
+
+
+        private static IStyle CreateLineStringStyle()
+        {
+#pragma warning disable CS8670 // Object or collection initializer implicitly dereferences possibly null member.
+            return new VectorStyle
+            {
+                Fill = null,
+                Outline = null,
+                Line = { Color = Color.BlueViolet, Width = 3 }
+            };
+#pragma warning restore CS8670 // Object or collection initializer implicitly dereferences possibly null member.
         }
     }
 }

@@ -18,15 +18,7 @@ namespace ControllerApp
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 });
 
-            //Check environment variable
-            var access_token = Environment.GetEnvironmentVariable("MAPBOX_ACCESS_TOKEN");
-
-            //if (string.IsNullOrEmpty(access_token))
-            //{
-            //    throw new InvalidOperationException("MAPBOX_ACCESS_TOKEN environment variable is not set.");
-            //}
             builder.Services.AddSingleton<IConfigurationService, ConfigurationService>();
-            //builder.Services.AddSingleton<IFileSource, FileSource>();
 
 #if DEBUG
             builder.Logging.AddDebug();
