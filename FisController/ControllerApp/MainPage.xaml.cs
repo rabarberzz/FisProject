@@ -1,10 +1,12 @@
 ﻿using ControllerApp.Services;
 using Mapbox.Directions;
 using Mapsui;
+using Mapsui.Extensions;
 using Mapsui.Layers;
 using Mapsui.Nts;
 using Mapsui.Styles;
 using Mapsui.UI.Maui;
+using Mapsui.Widgets;
 using NetTopologySuite.Features;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
@@ -117,7 +119,10 @@ namespace ControllerApp
                 responseEntry.Text = directions.Code;
                 var features = PointsFromDirectionsResponse(directions);
                 var layer = CreatePointLayer(features);
+                mapControl.Map.Info += MapOnInfo;
+                mapControl.Map?.Widgets.Add(new MapInfoWidget(mapControl.Map));
                 mapControl.Map?.Layers.Add(layer);
+
             }
         }
 
@@ -131,27 +136,58 @@ namespace ControllerApp
             return new MemoryLayer
             {
                 Name = "Points",
+                IsMapInfoLayer = true,
                 Features = features,
                 Style = Mapsui.Styles.SymbolStyles.CreatePinStyle(),
             };
         }
 
+        private static void MapOnInfo(object? sender, MapInfoEventArgs e)
+        {
+            var calloutStyle = e.MapInfo?.Feature?.Styles.Where(s => s is CalloutStyle).Cast<CalloutStyle>().FirstOrDefault();
+            if (calloutStyle != null)
+            {
+                calloutStyle.Enabled = !calloutStyle.Enabled;
+                e.MapInfo?.Layer?.DataHasChanged();
+            }
+        }
+
         private static IEnumerable<Mapsui.IFeature> PointsFromDirectionsResponse(DirectionsResponse directions)
         {
-            var points = directions.Routes.FirstOrDefault()?.Geometry;
+            var steps = directions.Routes.FirstOrDefault()?.Legs.FirstOrDefault()?.Steps;
             var features = new List<Mapsui.IFeature>();
 
-            if (points != null)
+            if (steps != null)
             {
-                foreach (var point in points)
+                foreach (var step in steps)
                 {
-                    var tempMPoint = new MPoint(point.y, point.x);
+                    var maneuver = step.Maneuver;
+                    var tempMPoint = new MPoint(maneuver.Location.y, maneuver.Location.x);
                     var feature = new PointFeature(Mapsui.Projections.SphericalMercator.FromLonLat(tempMPoint));
+                    feature["Instruction"] = maneuver.Instruction;
+                    feature["Modifier"] = maneuver.Modifier ?? "none";
+                    feature["Type"] = maneuver.Type;
+                    feature.Styles.Add(CreateCalloutStyle(feature.ToStringOfKeyValuePairs()));
                     features.Add(feature);
                 }
             }
 
             return features;
+        }
+
+        private static CalloutStyle CreateCalloutStyle(string content)
+        {
+            return new CalloutStyle
+            {
+                Title = content,
+                TitleFont = { FontFamily = null, Size = 12, Italic = false, Bold = true },
+                TitleFontColor = Color.Gray,
+                MaxWidth = 120,
+                RectRadius = 10,
+                ShadowWidth = 4,
+                Enabled = false,
+                SymbolOffset = new Offset(0, SymbolStyle.DefaultHeight * 1f)
+            };
         }
 
 
