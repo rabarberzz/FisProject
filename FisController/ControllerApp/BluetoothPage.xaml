@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ControllerApp.BluetoothPage"
+             Title="BluetoothPage">
+    <VerticalStackLayout>
+        <Label 
+            Text="Bluetooth page"
+            VerticalOptions="Center" 
+            HorizontalOptions="Center" />
+        <Label
+            x:Name="BleStatusLabel"
+            Text="BLE Status"
+            VerticalOptions="Center"
+            HorizontalOptions="Center" />
+        <Button 
+            Text="Scan for devices"
+            Clicked="OnScanForDevices_Clicked"
+            VerticalOptions="Center" 
+            HorizontalOptions="Center" />
+        <ListView 
+            x:Name="DeviceList"
+            VerticalOptions="FillAndExpand"
+            HorizontalOptions="FillAndExpand"
+            ItemsSource="{Binding Devices}"
+            ItemTemplate="{StaticResource DeviceTemplateSelector}" />
+    </VerticalStackLayout>
+</ContentPage>

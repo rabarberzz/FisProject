@@ -17,6 +17,8 @@ namespace ControllerApp
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 });
 
+            builder.Services.AddTransient<BluetoothPage>();
+
 #if DEBUG
     		builder.Logging.AddDebug();
 #endif
