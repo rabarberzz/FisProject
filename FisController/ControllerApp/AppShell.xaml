@@ -11,10 +11,8 @@
         Title="Home"
         ContentTemplate="{DataTemplate local:MainPage}"
         Route="MainPage" />
-
     <ShellContent
         Title="Bluetooth"
         ContentTemplate="{DataTemplate local:BluetoothPage}"
         Route="BluetoothPage" />
-
 </Shell>
