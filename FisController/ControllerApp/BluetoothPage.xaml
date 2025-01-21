@@ -3,6 +3,20 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="ControllerApp.BluetoothPage"
              Title="BluetoothPage">
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <DataTemplate x:Key="DeviceTemplate">
+                <ViewCell>
+                    <StackLayout Orientation="Vertical" Padding="10" VerticalOptions="FillAndExpand" MinimumHeightRequest="100">
+                        <Label Text="{Binding Name}" FontSize="Medium" />
+                        <Label Text="{Binding Id}" FontSize="Small" />
+                        <Label Text="{Binding State}" FontSize="Small" />
+                        <Label Text="{Binding BondState}" FontSize="Small" />
+                    </StackLayout>
+                </ViewCell>
+            </DataTemplate>
+        </ResourceDictionary>
+    </ContentPage.Resources>
     <VerticalStackLayout>
         <Label 
             Text="Bluetooth page"
@@ -22,7 +36,8 @@
             x:Name="DeviceList"
             VerticalOptions="FillAndExpand"
             HorizontalOptions="FillAndExpand"
+            MinimumHeightRequest="300"
             ItemsSource="{Binding Devices}"
-            ItemTemplate="{StaticResource DeviceTemplateSelector}" />
+            ItemTemplate="{StaticResource DeviceTemplate}" />
     </VerticalStackLayout>
 </ContentPage>

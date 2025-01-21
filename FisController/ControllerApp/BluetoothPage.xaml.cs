@@ -1,3 +1,4 @@
+using Android.Bluetooth;
 using Plugin.BLE;
 using Plugin.BLE.Abstractions.Contracts;
 using System.Collections.ObjectModel;
@@ -6,17 +7,18 @@ namespace ControllerApp
 {
 	public partial class BluetoothPage : ContentPage
 	{
-		private IBluetoothLE ble;
-		private IAdapter adapter;
-        public ObservableCollection<IDevice> Devices { get; private set; }
+        private IBluetoothLE ble;
+        private IAdapter adapter;
+        public ObservableCollection<IDevice> Devices { private set; get; }
 
         public BluetoothPage()
 		{
 			InitializeComponent();
-			Initialize();
+            Initialize();
+            BindingContext = this;
         }
 
-		public void Initialize()
+        public void Initialize()
         {
             ble = CrossBluetoothLE.Current;
             adapter = CrossBluetoothLE.Current.Adapter;
@@ -42,20 +44,16 @@ namespace ControllerApp
 
 
             DeviceList.ItemsSource = Devices;
-            DeviceList.ItemTemplate = DeviceListTemplate();
-        }
-
-        private static DataTemplate DeviceListTemplate()
-        {
-            var textCell = new TextCell();
-            textCell.SetBinding(TextCell.TextProperty, "Name");
-            textCell.SetBinding(TextCell.DetailProperty, "Id");
-            return new DataTemplate(() => textCell);
         }
 
         private async void OnScanForDevices_Clicked(object sender, EventArgs e)
         {
             await adapter.StartScanningForDevicesAsync();
+        }
+
+        private async void SetError(Exception ex)
+        {
+            await DisplayAlert("Error", ex.Message, "OK");
         }
     }
 }
