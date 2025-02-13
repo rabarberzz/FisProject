@@ -404,3 +404,5 @@ TLBFISLib-Main/
 TLBLib-main/
 VAGFISWriter-master/
 VWFIS/
+/FisController/ControllerApp/Platforms/Android/Resources/values/secrets.xml
+/FisController/ControllerApp/Platforms/Android/Resources/values/secrets.xml

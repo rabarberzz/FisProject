@@ -1,0 +1,131 @@
+﻿using Plugin.BLE;
+using Plugin.BLE.Abstractions;
+using Plugin.BLE.Abstractions.Contracts;
+using Plugin.BLE.Abstractions.Exceptions;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ControllerApp.Services
+{
+    class BleService
+    {
+        static Guid serviceUUID = Guid.Parse("f15aaf00-fc20-47c7-a574-9411948aed62"); // device/service UUID
+        static Guid charUUID = Guid.Parse("f15aaf01-fc20-47c7-a574-9411948aed62"); // text characteristic UUID
+        static Guid naviUUID = Guid.Parse("f15aaf02-fc20-47c7-a574-9411948aed62"); // navigation characteristic UUID
+
+        private IBluetoothLE ble;
+        private IAdapter adapter;
+        private CancellationTokenSource bleCancellationSource;
+        private IDevice? device;
+
+        private ICharacteristic? radioCharacteristic;
+        private ICharacteristic? naviCharacteristic;
+
+        public BleService()
+        {
+            ble = CrossBluetoothLE.Current;
+            adapter = CrossBluetoothLE.Current.Adapter;
+            bleCancellationSource = new CancellationTokenSource();
+        }
+
+        public async Task<bool> TryConnectToDevice(IDevice connectDevice)
+        {
+            if (adapter != null)
+            {
+                try
+                {
+                    await adapter.ConnectToDeviceAsync(connectDevice, cancellationToken: bleCancellationSource.Token);
+                    device = connectDevice;
+
+                    return await SetUpCharacteristics();
+                }
+                catch (DeviceConnectionException ex)
+                {
+                    bleCancellationSource.Cancel();
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        private async Task<bool> SetUpCharacteristics()
+        {
+            if (device == null) return false;
+
+            var service = await device.GetServiceAsync(serviceUUID);
+
+            if (service != null)
+            {
+                radioCharacteristic = await service.GetCharacteristicAsync(charUUID);
+                naviCharacteristic = await service.GetCharacteristicAsync(naviUUID);
+                return radioCharacteristic != null && naviCharacteristic != null;
+            }
+
+            return false;
+        }
+
+        public async Task<bool> TestConnection()
+        {
+            if (radioCharacteristic != null)
+            {
+                var result = await radioCharacteristic.WriteAsync(Encoding.UTF8.GetBytes("TEST\nFISCONTROL"));
+                if (result != 0) return false;
+                Thread.Sleep(2000);
+                result = await radioCharacteristic.WriteAsync(Encoding.UTF8.GetBytes(""));
+                return result == 0;
+            }
+
+            return false;
+        }
+
+        public async Task<IAdapter> StartScan(bool scanWithFilter = true)
+        {
+            adapter.ScanMode = ScanMode.Balanced;
+            if (scanWithFilter)
+            {
+                await adapter.StartScanningForDevicesAsync([serviceUUID]);
+            }
+            else
+            {
+                await adapter.StartScanningForDevicesAsync();
+            }
+
+            return adapter;
+        }
+
+        public string GetBleStatus()
+        {
+            return ble.State.ToString();
+        }
+
+        public void SetupDevicesDiscoveredEvent(ObservableCollection<IDevice> devices)
+        {
+            if (adapter == null)
+            {
+                return;
+            }
+            adapter.DeviceDiscovered += (s, a) =>
+            {
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    // clearing to avoid duplicates and not accessible devices
+                    devices.Clear();
+                    devices.Add(a.Device);
+                });
+            };
+        }
+
+        public async Task SendRadioBytes(string text)
+        {
+            if (radioCharacteristic != null)
+            {
+                var encodedText = Encoding.UTF8.GetBytes(text);
+                await radioCharacteristic.WriteAsync(encodedText);
+            }
+        }
+    }
+}
