@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace ControllerApp.Services
 {
-    class BleService
+    public class BleService
     {
         static Guid serviceUUID = Guid.Parse("f15aaf00-fc20-47c7-a574-9411948aed62"); // device/service UUID
         static Guid charUUID = Guid.Parse("f15aaf01-fc20-47c7-a574-9411948aed62"); // text characteristic UUID
@@ -30,6 +30,32 @@ namespace ControllerApp.Services
             ble = CrossBluetoothLE.Current;
             adapter = CrossBluetoothLE.Current.Adapter;
             bleCancellationSource = new CancellationTokenSource();
+        }
+
+        private async Task<bool> SetUpCharacteristics()
+        {
+            if (device == null) return false;
+
+            var service = await device.GetServiceAsync(serviceUUID);
+
+            if (service != null)
+            {
+                radioCharacteristic = await service.GetCharacteristicAsync(charUUID);
+                naviCharacteristic = await service.GetCharacteristicAsync(naviUUID);
+                return radioCharacteristic != null && naviCharacteristic != null;
+            }
+
+            return false;
+        }
+
+        private byte[] ConvertStringToBytesArray(string text)
+        {
+            byte[] bytes = new byte[text.Length];
+            for (int i = 0; i < text.Length; i++)
+            {
+                bytes[i] = (byte)text[i];
+            }
+            return bytes;
         }
 
         public async Task<bool> TryConnectToDevice(IDevice connectDevice)
@@ -52,21 +78,6 @@ namespace ControllerApp.Services
             return false;
         }
 
-        private async Task<bool> SetUpCharacteristics()
-        {
-            if (device == null) return false;
-
-            var service = await device.GetServiceAsync(serviceUUID);
-
-            if (service != null)
-            {
-                radioCharacteristic = await service.GetCharacteristicAsync(charUUID);
-                naviCharacteristic = await service.GetCharacteristicAsync(naviUUID);
-                return radioCharacteristic != null && naviCharacteristic != null;
-            }
-
-            return false;
-        }
 
         public async Task<bool> TestConnection()
         {
@@ -102,6 +113,11 @@ namespace ControllerApp.Services
             return ble.State.ToString();
         }
 
+        public string GetDeviceConnectedStatus()
+        {
+            return device != null && device.BondState == DeviceBondState.Bonded ? "Connected" : "Not connected";
+        }
+
         public void SetupDevicesDiscoveredEvent(ObservableCollection<IDevice> devices)
         {
             if (adapter == null)
@@ -125,6 +141,15 @@ namespace ControllerApp.Services
             {
                 var encodedText = Encoding.UTF8.GetBytes(text);
                 await radioCharacteristic.WriteAsync(encodedText);
+            }
+        }
+
+        public async Task SendNaviBytes(string text)
+        {
+            if (naviCharacteristic != null)
+            {
+                var encodedText = ConvertStringToBytesArray(text);
+                await naviCharacteristic.WriteAsync(encodedText);
             }
         }
     }

@@ -20,6 +20,7 @@ void errorHandler(unsigned long _);
 void drawScreen();
 void drawNavigation();
 void drawRuler();
+void drawTestLayout();
 
 // ==== definitions ====
 BluetoothSerial SerialBT;
@@ -73,7 +74,9 @@ void setup()
   FIS.begin();
   FIS.initScreen(SCREEN_SIZE);
 
-  drawRuler();
+  //drawRuler();
+  //drawTestLayout();
+  drawNavigation();
 
   /* //Set font options, which will persist for every subsequent text command.
   FIS.setFont(TLBFISLib::COMPACT);
@@ -258,4 +261,14 @@ void drawRuler()
   FIS.setLineSpacing(1);
   FIS.setTextAlignment(TLBFISLib::LEFT);
   FIS.writeMultiLineText(0, 0, "0\n8\n16\n24\n32\n40\n48\n56\n64\n72\n80\n88");
+}
+
+void drawTestLayout()
+{
+  FIS.clear();
+  FIS.setWorkspace(0, 24, 64, 55);
+  FIS.drawRect(0, 0, 64, 55, TLBFISLib::NOT_FILLED);
+  FIS.setFont(TLBFISLib::COMPACT);
+  FIS.writeText(2, 2, "TEST LAYOUT");
+  FIS.resetWorkspace();
 }

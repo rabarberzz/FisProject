@@ -5,16 +5,16 @@ using System.Windows.Input;
 
 namespace ControllerApp
 {
-	public partial class BluetoothPage : ContentPage
-	{
-        public ObservableCollection<IDevice> Devices { private set; get; }
+    public partial class BluetoothPage : ContentPage
+    {
+        public ObservableCollection<IDevice> Devices { private set; get; } = new ObservableCollection<IDevice>();
         public ICommand ConnectCommand { get; private set; }
-        private BleService bleService;
+        private readonly BleService bleService;
 
-        public BluetoothPage()
-		{
-			InitializeComponent();
-            bleService = new BleService();
+        public BluetoothPage(BleService bleService)
+        {
+            InitializeComponent();
+            this.bleService = bleService;
             Initialize();
             BindingContext = this;
 
@@ -28,7 +28,6 @@ namespace ControllerApp
                 BleStatusLabel.Text = bleService.GetBleStatus();
             });
             //adapter = bleService.StartScan().Result;
-            Devices = new ObservableCollection<IDevice>();
 
             bleService.SetupDevicesDiscoveredEvent(Devices);
             //DeviceList.ItemsSource = Devices;

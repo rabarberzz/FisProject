@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using ControllerApp.Services;
+using Microsoft.Extensions.Logging;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 
 namespace ControllerApp
@@ -18,9 +19,10 @@ namespace ControllerApp
                 });
 
             builder.Services.AddTransient<BluetoothPage>();
+            builder.Services.AddSingleton<BleService>();
 
 #if DEBUG
-    		builder.Logging.AddDebug();
+            builder.Logging.AddDebug();
 #endif
 
             return builder.Build();
