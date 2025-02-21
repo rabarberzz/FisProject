@@ -1,4 +1,5 @@
 using ControllerApp.Services;
+using Plugin.BLE.Abstractions.EventArgs;
 
 namespace ControllerApp;
 
@@ -9,10 +10,8 @@ public partial class TestWriteBLE : ContentPage
 	{
 		InitializeComponent();
         this.bleService = bleService;
-        if (bleService != null)
-        {
-            BleStatusLabel.Text = bleService.GetDeviceConnectedStatus();
-        }
+        
+        bleService.SetupConnectedEvent(OnDeviceConnected);
     }
 
     private async void WriteNaviEntry_Completed(object sender, EventArgs e)
@@ -29,5 +28,13 @@ public partial class TestWriteBLE : ContentPage
         {
             await bleService.SendRadioBytes(WriteRadioEntry.Text);
         }
+    }
+
+    private void OnDeviceConnected(object sender, DeviceEventArgs e)
+    {
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            BleStatusLabel.Text = e.Device.State.ToString();
+        });
     }
 }

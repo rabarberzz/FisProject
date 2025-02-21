@@ -1,6 +1,7 @@
 ﻿using Plugin.BLE;
 using Plugin.BLE.Abstractions;
 using Plugin.BLE.Abstractions.Contracts;
+using Plugin.BLE.Abstractions.EventArgs;
 using Plugin.BLE.Abstractions.Exceptions;
 using System;
 using System.Collections.Generic;
@@ -48,14 +49,17 @@ namespace ControllerApp.Services
             return false;
         }
 
-        private byte[] ConvertStringToBytesArray(string text)
+        private char[] ParseCharacterCodes(string charCodes)
         {
-            byte[] bytes = new byte[text.Length];
-            for (int i = 0; i < text.Length; i++)
+            var codes = charCodes.Split(new[] { "\\x" }, StringSplitOptions.RemoveEmptyEntries);
+            var characters = new char[codes.Length];
+
+            for (int i = 0; i < codes.Length; i++)
             {
-                bytes[i] = (byte)text[i];
+                characters[i] = (char)Convert.ToInt32(codes[i], 16);
             }
-            return bytes;
+
+            return characters;
         }
 
         public async Task<bool> TryConnectToDevice(IDevice connectDevice)
@@ -148,9 +152,16 @@ namespace ControllerApp.Services
         {
             if (naviCharacteristic != null)
             {
-                var encodedText = ConvertStringToBytesArray(text);
+                var charCodes = ParseCharacterCodes(text);
+                var charactersString = new string(charCodes);
+                var encodedText = Encoding.UTF8.GetBytes(charactersString);
                 await naviCharacteristic.WriteAsync(encodedText);
             }
+        }
+
+        public void SetupConnectedEvent(EventHandler<DeviceEventArgs> eventHandler)
+        {
+            adapter.DeviceConnected += eventHandler;
         }
     }
 }
