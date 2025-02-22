@@ -1,3 +1,4 @@
+using ControllerApp.Resources;
 using ControllerApp.Services;
 using Plugin.BLE.Abstractions.EventArgs;
 
@@ -6,11 +7,16 @@ namespace ControllerApp;
 public partial class TestWriteBLE : ContentPage
 {
     private readonly BleService bleService;
+    private readonly FisNavigationService fisNavigationService;
+    private NavigationTemplate naviTemplate = new NavigationTemplate();
     public TestWriteBLE(BleService bleService)
 	{
 		InitializeComponent();
         this.bleService = bleService;
-        
+        fisNavigationService = new FisNavigationService(this.bleService);
+
+        BindingContext = naviTemplate;
+
         bleService.SetupConnectedEvent(OnDeviceConnected);
     }
 
@@ -36,5 +42,16 @@ public partial class TestWriteBLE : ContentPage
         {
             BleStatusLabel.Text = e.Device.State.ToString();
         });
+    }
+
+    private async void SendNavigation_Clicked(object sender, EventArgs e)
+    {
+        await fisNavigationService.SendNavigationData();
+    }
+
+    private void CycleDirection_Clicked(object sender, EventArgs e)
+    {
+        naviTemplate = fisNavigationService.SetUpNextDirection();
+        BindingContext = naviTemplate;
     }
 }

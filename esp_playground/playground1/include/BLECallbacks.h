@@ -2,6 +2,8 @@
 #include <BLEServer.h>
 #include <TLBFISLib.h>
 
+#define NAVI_DATA_CODING "/icon_{0}/address_{1}/time_{2}/total_{3}/turn_{4}";
+
 class TextCharacteristicCallbacks: public BLECharacteristicCallbacks {
 private:
     TLBFISLib& fis;

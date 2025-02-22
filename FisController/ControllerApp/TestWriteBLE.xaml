@@ -31,5 +31,22 @@
             VerticalOptions="Center"
             HorizontalOptions="Center" 
             Completed="WriteRadioEntry_Completed"/>
+        <Button 
+            Text="Send direction"
+            Clicked="SendNavigation_Clicked"
+            VerticalOptions="Center" 
+            HorizontalOptions="Center" />
+        <Button 
+            Text="Cycle directions"
+            Clicked="CycleDirection_Clicked"
+            VerticalOptions="Center" 
+            HorizontalOptions="Center" />
+        <!-- Bind NavigationTemplate properties to UI elements -->
+        <Label Text="{Binding CurrentAddress}" VerticalOptions="Center" HorizontalOptions="Center" />
+        <Label Text="{Binding GetArrivalTimeString}" VerticalOptions="Center" HorizontalOptions="Center" />
+        <Label Text="{Binding GetTotalDistanceString}" VerticalOptions="Center" HorizontalOptions="Center" />
+        <Label Text="{Binding GetDistanceToNextTurnString}" VerticalOptions="Center" HorizontalOptions="Center" />
+        <Label Text="{Binding NextTurnDescriptor}" VerticalOptions="Center" HorizontalOptions="Center" />
+        <Label Text="{Binding DirectionsIcon}" VerticalOptions="Center" HorizontalOptions="Center" />
     </VerticalStackLayout>
 </ContentPage>
