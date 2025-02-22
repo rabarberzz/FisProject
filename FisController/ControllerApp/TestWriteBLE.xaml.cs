@@ -18,7 +18,7 @@ public partial class TestWriteBLE : ContentPage
     {
         if (bleService != null)
         {
-            await bleService.SendNaviBytes(WriteNaviEntry.Text);
+            await bleService.SendNaviDirectionsCodes(WriteNaviEntry.Text);
         }
     }
 

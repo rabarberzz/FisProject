@@ -148,13 +148,22 @@ namespace ControllerApp.Services
             }
         }
 
-        public async Task SendNaviBytes(string text)
+        public async Task SendNaviDirectionsCodes(string text)
         {
             if (naviCharacteristic != null)
             {
                 var charCodes = ParseCharacterCodes(text);
                 var charactersString = new string(charCodes);
                 var encodedText = Encoding.UTF8.GetBytes(charactersString);
+                await naviCharacteristic.WriteAsync(encodedText);
+            }
+        }
+
+        public async Task SendNaviBytes(string text)
+        {
+            if (naviCharacteristic != null)
+            {
+                var encodedText = Encoding.UTF8.GetBytes(text);
                 await naviCharacteristic.WriteAsync(encodedText);
             }
         }

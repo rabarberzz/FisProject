@@ -1,3 +1,4 @@
+using ControllerApp.Resources;
 using ControllerApp.Services;
 using Plugin.BLE.Abstractions.Contracts;
 using System.Collections.ObjectModel;
@@ -70,6 +71,15 @@ namespace ControllerApp
         private async void SetError(Exception ex)
         {
             await DisplayAlert("Error", ex.Message, "OK");
+        }
+
+        private async void TestNavi_Clicked(object sender, EventArgs e)
+        {
+            foreach (var dir in DirectionsCodes.GetDirectionsCodes())
+            {
+                await bleService.SendNaviBytes(dir.Value);
+                Thread.Sleep(2000);
+            }
         }
     }
 }
