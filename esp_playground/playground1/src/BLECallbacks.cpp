@@ -65,8 +65,7 @@ void writeNaviTextInWorkspace(const std::string& value, TLBFISLib& fis) {
     Serial.println("Turn: ");
     Serial.print(turn.c_str());
 
-    fis.setWorkspace(0, 24, 64, 55);
-    fis.clear();
+    fis.setWorkspace(0, 24, 64, 55, true);
     fis.drawRect(0, 0, 64, 55, TLBFISLib::NOT_FILLED);
     fis.setFont(TLBFISLib::COMPACT);
     fis.setLineSpacing(1);
@@ -75,15 +74,14 @@ void writeNaviTextInWorkspace(const std::string& value, TLBFISLib& fis) {
     fis.writeText(2, 2, time.c_str());
     fis.writeMultiLineText(2, 10, total.c_str());
 
-    // TODO: fix the alignment of the turn text, maybe draw KM seperately
-    fis.writeMultiLineText(52, 2, turn.c_str());
+    fis.setTextAlignment(TLBFISLib::RIGHT);
+    fis.writeMultiLineText(-1, 2, turn.c_str());
 
     fis.setTextAlignment(TLBFISLib::CENTER);
-    fis.writeText(0, 44, address.c_str());
+    fis.writeText(0, 46, address.c_str());
 
-    // TODO: the direction sometimes overlays and cleans part of arrival time
     fis.setFont(TLBFISLib::GRAPHICS);
-    fis.writeMultiLineText(0, 8, icon.c_str());
+    fis.writeMultiLineText(0, 10, icon.c_str());
 
     fis.resetWorkspace();
 }
