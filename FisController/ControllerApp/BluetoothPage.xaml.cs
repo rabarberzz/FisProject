@@ -1,5 +1,6 @@
 using ControllerApp.Resources;
 using ControllerApp.Services;
+using ControllerApp.ViewModels;
 using Plugin.BLE.Abstractions.Contracts;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
@@ -8,18 +9,18 @@ namespace ControllerApp
 {
     public partial class BluetoothPage : ContentPage
     {
-        public ObservableCollection<IDevice> Devices { private set; get; } = new ObservableCollection<IDevice>();
-        public ICommand ConnectCommand { get; private set; }
+        
+        //public ICommand ConnectCommand { get; private set; }
         private readonly BleService bleService;
 
-        public BluetoothPage(BleService bleService)
+        public BluetoothPage(BleService bleService, DevicesViewModel devicesViewModel)
         {
             InitializeComponent();
             this.bleService = bleService;
             Initialize();
-            BindingContext = this;
+            BindingContext = devicesViewModel;
 
-            ConnectCommand = new Command<IDevice>(async (device) => await ConnectToDevice(device));
+            //ConnectCommand = new Command<IDevice>(async (device) => await ConnectToDevice(device));
         }
 
         public void Initialize()
@@ -30,7 +31,7 @@ namespace ControllerApp
             });
             //adapter = bleService.StartScan().Result;
 
-            bleService.SetupDevicesDiscoveredEvent(Devices);
+            //bleService.SetupDevicesDiscoveredEvent(Devices);
             //DeviceList.ItemsSource = Devices;
         }
 
@@ -44,11 +45,19 @@ namespace ControllerApp
             await bleService.TestConnection();
         }
 
-        private async Task ConnectToDevice(IDevice device)
-        {
-            var result = await bleService.TryConnectToDevice(device);
-            SetBleConnectStatusLabelDispatch(result);
-        }
+        //private async Task ConnectToDevice(IDevice device)
+        //{
+        //    var result = await bleService.TryConnectToDevice(device);
+        //    SetBleConnectStatusLabelDispatch(result);
+        //    ConnectCommand = new Command<IDevice>(async (device) => await DisconnectFromDevice(device));
+            
+        //}
+
+        //private async Task DisconnectFromDevice(IDevice device)
+        //{
+        //    await bleService.TryDisconnectFromDevice(device);
+        //    SetBleConnectStatusLabelDispatch(false);
+        //}
 
         private void SetBleConnectStatusLabelDispatch(bool connectResult)
         {

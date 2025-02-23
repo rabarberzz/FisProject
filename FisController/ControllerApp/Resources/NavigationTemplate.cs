@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,8 +27,7 @@ namespace ControllerApp.Resources
         public string DirectionsIcon { get; set; } = "\x34\x74\x34";
 
         public string GetArrivalTimeString => $"{ArrivalTime.ToString("hh:mm")}";
-        public string GetTotalDistanceString => $"{TotalDistance}\nKM";
-        // TODO: output point (.) instead of comma from this next turn property
-        public string GetDistanceToNextTurnString => $"{DistanceToNextTurn}\nKM";
+        public string GetTotalDistanceString => $"{TotalDistance.ToString("F0", CultureInfo.InvariantCulture)}\nKM";
+        public string GetDistanceToNextTurnString => $"{DistanceToNextTurn.ToString("F1", CultureInfo.InvariantCulture)}\nKM";
     }
 }

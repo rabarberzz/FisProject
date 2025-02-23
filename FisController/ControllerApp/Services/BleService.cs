@@ -82,6 +82,17 @@ namespace ControllerApp.Services
             return false;
         }
 
+        public async Task TryDisconnectFromDevice(IDevice connectedDevice)
+        {
+            if (adapter != null)
+            {
+                if (device != null && device == connectedDevice)
+                {
+                    await adapter.DisconnectDeviceAsync(connectedDevice);
+                }
+            }
+        }
+
 
         public async Task<bool> TestConnection()
         {
@@ -135,6 +146,23 @@ namespace ControllerApp.Services
                     // clearing to avoid duplicates and not accessible devices
                     devices.Clear();
                     devices.Add(a.Device);
+                });
+            };
+
+            adapter.DeviceConnected += (s, a) =>
+            {
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    devices.Remove(a.Device);
+                    devices.Add(a.Device);
+                });
+            };
+
+            adapter.DeviceDisconnected += (s, a) =>
+            {
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    devices.Remove(a.Device);
                 });
             };
         }
