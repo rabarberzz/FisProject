@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ControllerApp.TestWriteBLE"
+             Title="TestWriteBLE">
+    <VerticalStackLayout>
+        <Label 
+            Text="BLE write page"
+            VerticalOptions="Center" 
+            HorizontalOptions="Center" />
+        <Label
+            x:Name="BleStatusLabel"
+            Text="BLE Status"
+            VerticalOptions="Center"
+            HorizontalOptions="Center" />
+        
+        <Label Text="Write navi"
+            VerticalOptions="Center"
+            HorizontalOptions="Center" />
+        <Entry x:Name="WriteNaviEntry"
+            Placeholder="Enter navi"
+            VerticalOptions="Center"
+            HorizontalOptions="Center" 
+            Completed="WriteNaviEntry_Completed"/>
+        
+        <Label Text="Write radio"
+            VerticalOptions="Center"
+            HorizontalOptions="Center" />
+        <Entry x:Name="WriteRadioEntry"
+            Placeholder="Enter radio"
+            VerticalOptions="Center"
+            HorizontalOptions="Center" 
+            Completed="WriteRadioEntry_Completed"/>
+        <Button 
+            Text="Send direction"
+            Clicked="SendNavigation_Clicked"
+            VerticalOptions="Center" 
+            HorizontalOptions="Center" />
+        <Button 
+            Text="Cycle directions"
+            Clicked="CycleDirection_Clicked"
+            VerticalOptions="Center" 
+            HorizontalOptions="Center" />
+        <!-- Bind NavigationTemplate properties to UI elements -->
+        <Label Text="{Binding CurrentAddress}" VerticalOptions="Center" HorizontalOptions="Center" />
+        <Label Text="{Binding GetArrivalTimeString}" VerticalOptions="Center" HorizontalOptions="Center" />
+        <Label Text="{Binding GetTotalDistanceString}" VerticalOptions="Center" HorizontalOptions="Center" />
+        <Label Text="{Binding GetDistanceToNextTurnString}" VerticalOptions="Center" HorizontalOptions="Center" />
+        <Label Text="{Binding NextTurnDescriptor}" VerticalOptions="Center" HorizontalOptions="Center" />
+        <Label Text="{Binding DirectionsIcon}" VerticalOptions="Center" HorizontalOptions="Center" />
+    </VerticalStackLayout>
+</ContentPage>

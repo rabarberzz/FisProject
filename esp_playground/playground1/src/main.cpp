@@ -4,8 +4,8 @@
 #include <SPI.h>
 #include <BLEDevice.h>
 #include <BLEUtils.h>
-#include <BLEScan.h>
-#include <BLEAdvertisedDevice.h>
+#include <BLEServer.h>
+#include <BLECallbacks.h>
 
 // ==== global definitions ====
 #define SPI_INSTANCE SPI
@@ -20,37 +20,31 @@ void errorHandler(unsigned long _);
 void drawScreen();
 void drawNavigation();
 void drawRuler();
+void drawTestLayout();
 
 // ==== definitions ====
 BluetoothSerial SerialBT;
 char BtInputText[20];
 // = BLE =
-static BLEUUID serviceUUIDs[] = {
-  BLEUUID("0000180a-0000-1000-8000-00805f9b34fb"),
-  BLEUUID("f15aaf00-fc20-47c7-a574-9411948aed62")
-};
-static BLEUUID charUUID("f15aaf01-fc20-47c7-a574-9411948aed62");
-static BLEAddress *pServerAddress;
-static BLERemoteCharacteristic *pRemoteCharacteristic;
-static BLEClient *pClient;
-static BLEScan *pBLEScan;
+static BLEUUID serviceUUID("f15aaf00-fc20-47c7-a574-9411948aed62"); // device/service UUID
+static BLEUUID charUUID("f15aaf01-fc20-47c7-a574-9411948aed62"); // text characteristic UUID
+static BLEUUID naviUUID("f15aaf02-fc20-47c7-a574-9411948aed62"); // navigation characteristic UUID
 
 // ==== inits ====
-const String DeviceName = "ESP32-BT-Slave";
+const String DeviceName = "ESP32-BT-Server";
 TLBFISLib FIS(ENA_PIN, sendFunction, beginFunction);
 bool sendEntryString = false; // dont forget this
 String receivedData = "";
-char roundabout[] =
-              "\x11\x12\x13" GRAPHICS_NEWLINE
+char roundabout[] =   // \x11\x12\x13\x7A\x1D\x1E\x1F\x20\x21\x7A\x2A\x2B\x2C\x2D\x2E\x7A\x39\x3A\x3B\x7A\x41
+              "\x11\x12\x13" GRAPHICS_NEWLINE 
           "\x1D\x1E\x1F\x20\x21" GRAPHICS_NEWLINE
           "\x2A\x2B\x2C\x2D\x2E" GRAPHICS_NEWLINE
               "\x39\x3A\x3B" GRAPHICS_NEWLINE
                   "\x41";
-char leftTurn[] =
+char leftTurn[] = // \x30\x33\x33\x7A\x3E\x41\x3A\x7A\x74\x74\x3A
       "\x30\x33\x33" GRAPHICS_NEWLINE
       "\x3E\x41\x3A" GRAPHICS_NEWLINE
       "\x74\x74\x3A";
-bool doConnect = false;
 bool connected = false;
 
 // ==== check bt availability ====
@@ -63,25 +57,11 @@ bool connected = false;
 #error Serial Port Profile for Bluetooth is not available or not enabled. It is only available for the ESP32 chip.
 #endif
 
-class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
-    void onResult(BLEAdvertisedDevice advertisedDevice) {
-      Serial.printf("Advertised Device: %s \n", advertisedDevice.toString().c_str());
-      // Check if the advertised device is the one we are looking for
-      for (BLEUUID serviceUUID : serviceUUIDs) 
-      {
-        if (advertisedDevice.haveServiceUUID() && (advertisedDevice.getServiceUUID().equals(serviceUUID) ))
-        {
-          advertisedDevice.getScan()->stop();
-          pServerAddress = new BLEAddress(advertisedDevice.getAddress());
-          doConnect = true;
-          Serial.println("Device found. Connecting...");
-        }
-      }
-    }
-};
-
 void setup()
 {
+  // setup led pin mode
+  pinMode(LED_BUILTIN, OUTPUT);
+
   // setup serial
   Serial.begin(115200);
 
@@ -94,7 +74,9 @@ void setup()
   FIS.begin();
   FIS.initScreen(SCREEN_SIZE);
 
-  drawRuler();
+  //drawRuler();
+  //drawTestLayout();
+  drawNavigation();
 
   /* //Set font options, which will persist for every subsequent text command.
   FIS.setFont(TLBFISLib::COMPACT);
@@ -109,53 +91,59 @@ void setup()
   FIS.setFont(TLBFISLib::COMPACT); */
 
   // init ble
+  Serial.println("Starting BLE service");
   BLEDevice::init(DeviceName.c_str());
-  pBLEScan = BLEDevice::getScan();
-  pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
-  pBLEScan->setActiveScan(true);
-  pBLEScan->start(30);
+  BLEServer *pServer = BLEDevice::createServer();
+  pServer->setCallbacks(new MyBLEServerCallbacks(connected));
+
+  BLEService *pService = pServer->createService(serviceUUID);
+
+  BLECharacteristic *textCharacteristic = pService->createCharacteristic(
+    charUUID,
+    BLECharacteristic::PROPERTY_READ |
+    BLECharacteristic::PROPERTY_WRITE |
+    BLECharacteristic::PROPERTY_NOTIFY
+  );
+  textCharacteristic->setValue("BLE TEXT INIT");
+  textCharacteristic->setCallbacks(new TextCharacteristicCallbacks(FIS)); // Register the text callback
+
+  BLECharacteristic *naviCharacteristic = pService->createCharacteristic(
+    naviUUID,
+    BLECharacteristic::PROPERTY_READ |
+    BLECharacteristic::PROPERTY_WRITE |
+    BLECharacteristic::PROPERTY_NOTIFY
+  );
+  naviCharacteristic->setCallbacks(new NaviCharacteristicCallbacks(FIS)); // Register the navigation callback
+
+  pService->start();
+
+  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+  pAdvertising->addServiceUUID(serviceUUID);
+  pAdvertising->setScanResponse(true);
+  pAdvertising->setMinPreferred(0x06);  // functions that help with iPhone connections issue
+  pAdvertising->setMinPreferred(0x12);
+  BLEDevice::startAdvertising();
 }
 
 void loop()
 {
   // ble stuff
-  if (doConnect)
+  if (connected)
   {
-    pClient = BLEDevice::createClient();
-    pClient->connect(*pServerAddress);
-    Serial.println("Connected to server");
-    pRemoteCharacteristic = pClient->getService(serviceUUIDs[1])->getCharacteristic(charUUID);
-    // Set the ESP32 LED on
-    pinMode(LED_BUILTIN, OUTPUT);
+    // set led on when client connected
     digitalWrite(LED_BUILTIN, HIGH);
-    if (pRemoteCharacteristic->canRead())
-    {
-      std::string value = pRemoteCharacteristic->readValue();
-      Serial.printf("Start Characteristic value: %s\n", value.c_str());
-    }
-
-    pRemoteCharacteristic->registerForNotify([](BLERemoteCharacteristic* pBLERemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify)
-    {
-      std::string value((char*)pData, length);
-      Serial.printf("Characteristic value: %s\n", value.c_str());
-      FIS.clear();
-      FIS.writeMultiLineText(0, 1, value.c_str());
-    });
-    doConnect = false;
-    connected = true;
-    }
+  }
+  else
+  {
+    // set led off when client disconnected
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(500);
+  }
 
   // fis disruption handler handle
   //FIS.errorFunction(errorHandler);
-  // serial prompt
-  if (sendEntryString)
-  {
-    Serial.println("Try to input something");
-    SerialBT.println("Try to input something");
-    sendEntryString = false;
-  }
   
-  // check if bt client has sent something
+  // check if serial bt client has sent something
   //while (SerialBT.available())
   while (false)
   {
@@ -273,4 +261,14 @@ void drawRuler()
   FIS.setLineSpacing(1);
   FIS.setTextAlignment(TLBFISLib::LEFT);
   FIS.writeMultiLineText(0, 0, "0\n8\n16\n24\n32\n40\n48\n56\n64\n72\n80\n88");
+}
+
+void drawTestLayout()
+{
+  FIS.clear();
+  FIS.setWorkspace(0, 24, 64, 55);
+  FIS.drawRect(0, 0, 64, 55, TLBFISLib::NOT_FILLED);
+  FIS.setFont(TLBFISLib::COMPACT);
+  FIS.writeText(2, 2, "TEST LAYOUT");
+  FIS.resetWorkspace();
 }

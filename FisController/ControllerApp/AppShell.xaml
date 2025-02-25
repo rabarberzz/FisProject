@@ -11,5 +11,12 @@
         Title="Home"
         ContentTemplate="{DataTemplate local:MainPage}"
         Route="MainPage" />
-
+    <ShellContent
+        Title="Bluetooth"
+        ContentTemplate="{DataTemplate local:BluetoothPage}"
+        Route="BluetoothPage" />
+    <ShellContent
+        Title="BLE Write"
+        ContentTemplate="{DataTemplate local:TestWriteBLE}"
+        Route="TestWriteBLE" />
 </Shell>
