@@ -3,12 +3,8 @@ using Plugin.BLE.Abstractions;
 using Plugin.BLE.Abstractions.Contracts;
 using Plugin.BLE.Abstractions.EventArgs;
 using Plugin.BLE.Abstractions.Exceptions;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace ControllerApp.Services
 {
@@ -82,15 +78,18 @@ namespace ControllerApp.Services
             return false;
         }
 
-        public async Task TryDisconnectFromDevice(IDevice connectedDevice)
+        public async Task<bool> TryDisconnectFromDevice(IDevice connectedDevice)
         {
             if (adapter != null)
             {
                 if (device != null && device == connectedDevice)
                 {
                     await adapter.DisconnectDeviceAsync(connectedDevice);
+                    device = null;
+                    return true;
                 }
             }
+            return false;
         }
 
 

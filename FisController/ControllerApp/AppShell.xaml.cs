@@ -1,7 +1,4 @@
-﻿using ControllerApp.Services;
-using Microsoft.Extensions.DependencyInjection;
-
-namespace ControllerApp
+﻿namespace ControllerApp
 {
     public partial class AppShell : Shell
     {

@@ -56,10 +56,5 @@
             Clicked="OnTest_Clicked"
             VerticalOptions="Center"
             HorizontalOptions="Center" />
-        <Button
-            Text="TestNavi"
-            Clicked="TestNavi_Clicked"
-            VerticalOptions="Center"
-            HorizontalOptions="Center" />
     </VerticalStackLayout>
 </ContentPage>

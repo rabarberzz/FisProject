@@ -1,16 +1,11 @@
-using ControllerApp.Resources;
 using ControllerApp.Services;
 using ControllerApp.ViewModels;
-using Plugin.BLE.Abstractions.Contracts;
-using System.Collections.ObjectModel;
-using System.Windows.Input;
+using Plugin.BLE.Abstractions.EventArgs;
 
 namespace ControllerApp
 {
     public partial class BluetoothPage : ContentPage
     {
-        
-        //public ICommand ConnectCommand { get; private set; }
         private readonly BleService bleService;
 
         public BluetoothPage(BleService bleService, DevicesViewModel devicesViewModel)
@@ -20,7 +15,7 @@ namespace ControllerApp
             Initialize();
             BindingContext = devicesViewModel;
 
-            //ConnectCommand = new Command<IDevice>(async (device) => await ConnectToDevice(device));
+            devicesViewModel.DeviceConnectionChanged += OnDeviceConnectionChanged;
         }
 
         public void Initialize()
@@ -43,6 +38,24 @@ namespace ControllerApp
         private async void OnTest_Clicked(object sender, EventArgs e)
         {
             await bleService.TestConnection();
+        }
+
+        private void OnDeviceConnectionChanged(object sender, DeviceEventArgs args)
+        {
+            if (args.Device != null)
+            {
+                BleConnectStatusLabel.Dispatcher.Dispatch(() =>
+                {
+                    BleConnectStatusLabel.Text = $"Connected: {args.Device.Name}";
+                });
+            }
+            else
+            {
+                BleConnectStatusLabel.Dispatcher.Dispatch(() =>
+                {
+                    BleConnectStatusLabel.Text = "Disconnected";
+                });
+            }
         }
 
         //private async Task ConnectToDevice(IDevice device)
@@ -80,15 +93,6 @@ namespace ControllerApp
         private async void SetError(Exception ex)
         {
             await DisplayAlert("Error", ex.Message, "OK");
-        }
-
-        private async void TestNavi_Clicked(object sender, EventArgs e)
-        {
-            foreach (var dir in DirectionsCodes.GetDirectionsCodes())
-            {
-                await bleService.SendNaviBytes(dir.Value);
-                Thread.Sleep(2000);
-            }
         }
     }
 }

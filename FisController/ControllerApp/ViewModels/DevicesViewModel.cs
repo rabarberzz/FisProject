@@ -1,5 +1,6 @@
 ﻿using ControllerApp.Services;
 using Plugin.BLE.Abstractions.Contracts;
+using Plugin.BLE.Abstractions.EventArgs;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -15,6 +16,7 @@ namespace ControllerApp.ViewModels
         public event PropertyChangedEventHandler? PropertyChanged;
         public ICommand ConnectCommand { get; private set; }
         public ObservableCollection<IDevice> Devices { private set; get; } = new ObservableCollection<IDevice>();
+        public event EventHandler<DeviceEventArgs>? DeviceConnectionChanged;
 
         // Default constructor for XAML instantiation
         public DevicesViewModel()
@@ -42,13 +44,21 @@ namespace ControllerApp.ViewModels
         private async Task ConnectToDevice(IDevice device)
         {
             var result = await bleService.TryConnectToDevice(device);
+            if (result)
+            {
+                DeviceConnectionChanged?.Invoke(this, new DeviceEventArgs() { Device = device});
+            }
         }
 
         private async Task DisconnectFromDevice(IDevice device)
         {
             if (device != null && device.State == Plugin.BLE.Abstractions.DeviceState.Connected)
             {
-                await bleService.TryDisconnectFromDevice(device);
+                var result = await bleService.TryDisconnectFromDevice(device);
+                if (result)
+                {
+                    DeviceConnectionChanged?.Invoke(this, new DeviceEventArgs());
+                }
             }
         }
 
@@ -57,5 +67,9 @@ namespace ControllerApp.ViewModels
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        protected virtual void OnDeviceConnectionChanged(DeviceEventArgs e)
+        {
+            DeviceConnectionChanged?.Invoke(this, e);
+        }
     }
 }
