@@ -24,10 +24,6 @@ namespace ControllerApp
             {
                 BleStatusLabel.Text = bleService.GetBleStatus();
             });
-            //adapter = bleService.StartScan().Result;
-
-            //bleService.SetupDevicesDiscoveredEvent(Devices);
-            //DeviceList.ItemsSource = Devices;
         }
 
         private async void OnScanForDevices_Clicked(object sender, EventArgs e)
@@ -40,7 +36,7 @@ namespace ControllerApp
             await bleService.TestConnection();
         }
 
-        private void OnDeviceConnectionChanged(object sender, DeviceEventArgs args)
+        private void OnDeviceConnectionChanged(object? sender, DeviceEventArgs args)
         {
             if (args.Device != null)
             {
@@ -54,38 +50,6 @@ namespace ControllerApp
                 BleConnectStatusLabel.Dispatcher.Dispatch(() =>
                 {
                     BleConnectStatusLabel.Text = "Disconnected";
-                });
-            }
-        }
-
-        //private async Task ConnectToDevice(IDevice device)
-        //{
-        //    var result = await bleService.TryConnectToDevice(device);
-        //    SetBleConnectStatusLabelDispatch(result);
-        //    ConnectCommand = new Command<IDevice>(async (device) => await DisconnectFromDevice(device));
-            
-        //}
-
-        //private async Task DisconnectFromDevice(IDevice device)
-        //{
-        //    await bleService.TryDisconnectFromDevice(device);
-        //    SetBleConnectStatusLabelDispatch(false);
-        //}
-
-        private void SetBleConnectStatusLabelDispatch(bool connectResult)
-        {
-            if (connectResult)
-            {
-                BleConnectStatusLabel.Dispatcher.Dispatch(() =>
-                {
-                    BleConnectStatusLabel.Text = "Connected";
-                });
-            }
-            else
-            {
-                BleConnectStatusLabel.Dispatcher.Dispatch(() =>
-                {
-                    BleConnectStatusLabel.Text = "Failed to connect";
                 });
             }
         }

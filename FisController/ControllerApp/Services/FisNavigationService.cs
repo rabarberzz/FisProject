@@ -72,6 +72,11 @@ namespace ControllerApp.Services
             return data;
         }
 
+        public void SetNavigationTemplates(List<NavigationTemplate> templates)
+        {
+            navigationTemplateList = templates;
+        }
+
         public async Task SendNavigationData()
         {
             await bleService.SendNaviBytes(SetUpData());

@@ -20,7 +20,7 @@ namespace ControllerApp
                 });
 
             builder.Services.AddSingleton<IConfigurationService, ConfigurationService>();
-
+            builder.Services.AddSingleton<MapService>();
             builder.Services.AddTransient<BluetoothPage>();
             builder.Services.AddSingleton<BleService>();
             builder.Services.AddTransient<DevicesViewModel>(provider =>

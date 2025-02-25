@@ -22,11 +22,11 @@ namespace ControllerApp
         private MapControl mapControl;
         private MapService mapService;
 
-        public MainPage()
+        public MainPage(MapService mapSvc)
         {
             InitializeComponent();
             InitializeMap();
-            mapService = new MapService();
+            mapService = mapSvc;
             mapService.DirectionsResponseReceived += OnDirectionsReceived;
             mapService.RequestFailed += OnHttpRequestFailed;
 
@@ -122,7 +122,6 @@ namespace ControllerApp
                 mapControl.Map.Info += MapOnInfo;
                 mapControl.Map?.Widgets.Add(new MapInfoWidget(mapControl.Map));
                 mapControl.Map?.Layers.Add(layer);
-
             }
         }
 
@@ -167,6 +166,7 @@ namespace ControllerApp
                     feature["Instruction"] = maneuver.Instruction;
                     feature["Modifier"] = maneuver.Modifier ?? "none";
                     feature["Type"] = maneuver.Type;
+                    feature["Exit"] = maneuver.Exit;
                     feature.Styles.Add(CreateCalloutStyle(feature.ToStringOfKeyValuePairs()));
                     features.Add(feature);
                 }
