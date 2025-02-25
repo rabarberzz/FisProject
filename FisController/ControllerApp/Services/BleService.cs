@@ -1,17 +1,14 @@
 ﻿using Plugin.BLE;
 using Plugin.BLE.Abstractions;
 using Plugin.BLE.Abstractions.Contracts;
+using Plugin.BLE.Abstractions.EventArgs;
 using Plugin.BLE.Abstractions.Exceptions;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace ControllerApp.Services
 {
-    class BleService
+    public class BleService
     {
         static Guid serviceUUID = Guid.Parse("f15aaf00-fc20-47c7-a574-9411948aed62"); // device/service UUID
         static Guid charUUID = Guid.Parse("f15aaf01-fc20-47c7-a574-9411948aed62"); // text characteristic UUID
@@ -30,6 +27,35 @@ namespace ControllerApp.Services
             ble = CrossBluetoothLE.Current;
             adapter = CrossBluetoothLE.Current.Adapter;
             bleCancellationSource = new CancellationTokenSource();
+        }
+
+        private async Task<bool> SetUpCharacteristics()
+        {
+            if (device == null) return false;
+
+            var service = await device.GetServiceAsync(serviceUUID);
+
+            if (service != null)
+            {
+                radioCharacteristic = await service.GetCharacteristicAsync(charUUID);
+                naviCharacteristic = await service.GetCharacteristicAsync(naviUUID);
+                return radioCharacteristic != null && naviCharacteristic != null;
+            }
+
+            return false;
+        }
+
+        private char[] ParseCharacterCodes(string charCodes)
+        {
+            var codes = charCodes.Split(new[] { "\\x" }, StringSplitOptions.RemoveEmptyEntries);
+            var characters = new char[codes.Length];
+
+            for (int i = 0; i < codes.Length; i++)
+            {
+                characters[i] = (char)Convert.ToInt32(codes[i], 16);
+            }
+
+            return characters;
         }
 
         public async Task<bool> TryConnectToDevice(IDevice connectDevice)
@@ -52,21 +78,20 @@ namespace ControllerApp.Services
             return false;
         }
 
-        private async Task<bool> SetUpCharacteristics()
+        public async Task<bool> TryDisconnectFromDevice(IDevice connectedDevice)
         {
-            if (device == null) return false;
-
-            var service = await device.GetServiceAsync(serviceUUID);
-
-            if (service != null)
+            if (adapter != null)
             {
-                radioCharacteristic = await service.GetCharacteristicAsync(charUUID);
-                naviCharacteristic = await service.GetCharacteristicAsync(naviUUID);
-                return radioCharacteristic != null && naviCharacteristic != null;
+                if (device != null && device == connectedDevice)
+                {
+                    await adapter.DisconnectDeviceAsync(connectedDevice);
+                    device = null;
+                    return true;
+                }
             }
-
             return false;
         }
+
 
         public async Task<bool> TestConnection()
         {
@@ -102,6 +127,11 @@ namespace ControllerApp.Services
             return ble.State.ToString();
         }
 
+        public string GetDeviceConnectedStatus()
+        {
+            return device != null && device.BondState == DeviceBondState.Bonded ? "Connected" : "Not connected";
+        }
+
         public void SetupDevicesDiscoveredEvent(ObservableCollection<IDevice> devices)
         {
             if (adapter == null)
@@ -117,6 +147,23 @@ namespace ControllerApp.Services
                     devices.Add(a.Device);
                 });
             };
+
+            adapter.DeviceConnected += (s, a) =>
+            {
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    devices.Remove(a.Device);
+                    devices.Add(a.Device);
+                });
+            };
+
+            adapter.DeviceDisconnected += (s, a) =>
+            {
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    devices.Remove(a.Device);
+                });
+            };
         }
 
         public async Task SendRadioBytes(string text)
@@ -126,6 +173,31 @@ namespace ControllerApp.Services
                 var encodedText = Encoding.UTF8.GetBytes(text);
                 await radioCharacteristic.WriteAsync(encodedText);
             }
+        }
+
+        public async Task SendNaviDirectionsCodes(string text)
+        {
+            if (naviCharacteristic != null)
+            {
+                var charCodes = ParseCharacterCodes(text);
+                var charactersString = new string(charCodes);
+                var encodedText = Encoding.UTF8.GetBytes(charactersString);
+                await naviCharacteristic.WriteAsync(encodedText);
+            }
+        }
+
+        public async Task SendNaviBytes(string text)
+        {
+            if (naviCharacteristic != null)
+            {
+                var encodedText = Encoding.UTF8.GetBytes(text);
+                await naviCharacteristic.WriteAsync(encodedText);
+            }
+        }
+
+        public void SetupConnectedEvent(EventHandler<DeviceEventArgs> eventHandler)
+        {
+            adapter.DeviceConnected += eventHandler;
         }
     }
 }

@@ -1,30 +1,14 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:ControllerApp.ViewModels"
              x:Class="ControllerApp.BluetoothPage"
              Title="BluetoothPage">
-    <ContentPage.Resources>
-        <ResourceDictionary>
-            <!--<DataTemplate x:Key="DeviceTemplate">
-                <ViewCell>
-                    <Grid Padding="10" MinimumHeightRequest="100" HeightRequest="150">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Label Grid.Row="0" Text="{Binding Name}" FontSize="Medium" HeightRequest="40"/>
-                        <Label Grid.Row="1" Text="{Binding Id}" FontSize="Small" />
-                        <Label Grid.Row="2" Text="{Binding State}" FontSize="Small" />
-                        <Label Grid.Row="3" Text="{Binding BondState}" FontSize="Small" />
-                        <Button Grid.Row="4" Text="Connect" Command="{Binding Path=BindingContext.ConnectCommand, Source={x:Reference DeviceList}}" CommandParameter="{Binding .}"  HeightRequest="50"/>
-                    </Grid>
-                </ViewCell>
-            </DataTemplate>-->
-        </ResourceDictionary>
-    </ContentPage.Resources>
+
+    <ContentPage.BindingContext>
+        <vm:DevicesViewModel />
+    </ContentPage.BindingContext>
+    
     <VerticalStackLayout>
         <Label 
             Text="Bluetooth page"
@@ -45,14 +29,6 @@
             Clicked="OnScanForDevices_Clicked"
             VerticalOptions="Center" 
             HorizontalOptions="Center" />
-        <!--<ListView 
-            x:Name="DeviceList"
-            VerticalOptions="Fill"
-            HorizontalOptions="FillAndExpand"
-            MinimumHeightRequest="400"
-            HeightRequest="400"
-            ItemsSource="{Binding Devices}"
-            ItemTemplate="{StaticResource DeviceTemplate}" />-->
         <ScrollView VerticalOptions="Fill" HorizontalOptions="FillAndExpand" MinimumHeightRequest="400" HeightRequest="400">
             <StackLayout x:Name="DeviceStack" BindableLayout.ItemsSource="{Binding Devices}" VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand">
                 <BindableLayout.ItemTemplate>
@@ -69,7 +45,7 @@
                             <Label Grid.Row="1" Text="{Binding Id}" FontSize="Small" />
                             <Label Grid.Row="2" Text="{Binding State}" FontSize="Small" />
                             <Label Grid.Row="3" Text="{Binding BondState}" FontSize="Small" />
-                            <Button Grid.Row="4" Text="Connect" Command="{Binding Path=BindingContext.ConnectCommand, Source={x:Reference DeviceStack}}" CommandParameter="{Binding .}" />
+                            <Button Grid.Row="4" Text="{Binding Path=BindingContext.ConnectionButtonText, Source={x:Reference DeviceStack}}" Command="{Binding Path=BindingContext.ConnectCommand, Source={x:Reference DeviceStack}}" CommandParameter="{Binding .}" />
                         </Grid>
                     </DataTemplate>
                 </BindableLayout.ItemTemplate>

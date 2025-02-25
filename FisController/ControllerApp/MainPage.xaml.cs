@@ -1,7 +1,5 @@
-﻿using Mapsui.Styles;
-using Mapsui;
+﻿using Mapsui;
 using Mapsui.Layers;
-using System.Timers;
 using Timer = System.Timers.Timer;
 
 namespace ControllerApp

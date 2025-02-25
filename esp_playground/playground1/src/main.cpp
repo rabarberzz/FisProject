@@ -20,6 +20,7 @@ void errorHandler(unsigned long _);
 void drawScreen();
 void drawNavigation();
 void drawRuler();
+void drawTestLayout();
 
 // ==== definitions ====
 BluetoothSerial SerialBT;
@@ -34,13 +35,13 @@ const String DeviceName = "ESP32-BT-Server";
 TLBFISLib FIS(ENA_PIN, sendFunction, beginFunction);
 bool sendEntryString = false; // dont forget this
 String receivedData = "";
-char roundabout[] =
-              "\x11\x12\x13" GRAPHICS_NEWLINE
+char roundabout[] =   // \x11\x12\x13\x7A\x1D\x1E\x1F\x20\x21\x7A\x2A\x2B\x2C\x2D\x2E\x7A\x39\x3A\x3B\x7A\x41
+              "\x11\x12\x13" GRAPHICS_NEWLINE 
           "\x1D\x1E\x1F\x20\x21" GRAPHICS_NEWLINE
           "\x2A\x2B\x2C\x2D\x2E" GRAPHICS_NEWLINE
               "\x39\x3A\x3B" GRAPHICS_NEWLINE
                   "\x41";
-char leftTurn[] =
+char leftTurn[] = // \x30\x33\x33\x7A\x3E\x41\x3A\x7A\x74\x74\x3A
       "\x30\x33\x33" GRAPHICS_NEWLINE
       "\x3E\x41\x3A" GRAPHICS_NEWLINE
       "\x74\x74\x3A";
@@ -73,7 +74,9 @@ void setup()
   FIS.begin();
   FIS.initScreen(SCREEN_SIZE);
 
-  drawRuler();
+  //drawRuler();
+  //drawTestLayout();
+  drawNavigation();
 
   /* //Set font options, which will persist for every subsequent text command.
   FIS.setFont(TLBFISLib::COMPACT);
@@ -258,4 +261,14 @@ void drawRuler()
   FIS.setLineSpacing(1);
   FIS.setTextAlignment(TLBFISLib::LEFT);
   FIS.writeMultiLineText(0, 0, "0\n8\n16\n24\n32\n40\n48\n56\n64\n72\n80\n88");
+}
+
+void drawTestLayout()
+{
+  FIS.clear();
+  FIS.setWorkspace(0, 24, 64, 55);
+  FIS.drawRect(0, 0, 64, 55, TLBFISLib::NOT_FILLED);
+  FIS.setFont(TLBFISLib::COMPACT);
+  FIS.writeText(2, 2, "TEST LAYOUT");
+  FIS.resetWorkspace();
 }

@@ -1,24 +1,21 @@
 using ControllerApp.Services;
-using Plugin.BLE.Abstractions.Contracts;
-using System.Collections.ObjectModel;
-using System.Windows.Input;
+using ControllerApp.ViewModels;
+using Plugin.BLE.Abstractions.EventArgs;
 
 namespace ControllerApp
 {
-	public partial class BluetoothPage : ContentPage
-	{
-        public ObservableCollection<IDevice> Devices { private set; get; }
-        public ICommand ConnectCommand { get; private set; }
-        private BleService bleService;
+    public partial class BluetoothPage : ContentPage
+    {
+        private readonly BleService bleService;
 
-        public BluetoothPage()
-		{
-			InitializeComponent();
-            bleService = new BleService();
+        public BluetoothPage(BleService bleService, DevicesViewModel devicesViewModel)
+        {
+            InitializeComponent();
+            this.bleService = bleService;
             Initialize();
-            BindingContext = this;
+            BindingContext = devicesViewModel;
 
-            ConnectCommand = new Command<IDevice>(async (device) => await ConnectToDevice(device));
+            devicesViewModel.DeviceConnectionChanged += OnDeviceConnectionChanged;
         }
 
         public void Initialize()
@@ -28,9 +25,8 @@ namespace ControllerApp
                 BleStatusLabel.Text = bleService.GetBleStatus();
             });
             //adapter = bleService.StartScan().Result;
-            Devices = new ObservableCollection<IDevice>();
 
-            bleService.SetupDevicesDiscoveredEvent(Devices);
+            //bleService.SetupDevicesDiscoveredEvent(Devices);
             //DeviceList.ItemsSource = Devices;
         }
 
@@ -44,11 +40,37 @@ namespace ControllerApp
             await bleService.TestConnection();
         }
 
-        private async Task ConnectToDevice(IDevice device)
+        private void OnDeviceConnectionChanged(object sender, DeviceEventArgs args)
         {
-            var result = await bleService.TryConnectToDevice(device);
-            SetBleConnectStatusLabelDispatch(result);
+            if (args.Device != null)
+            {
+                BleConnectStatusLabel.Dispatcher.Dispatch(() =>
+                {
+                    BleConnectStatusLabel.Text = $"Connected: {args.Device.Name}";
+                });
+            }
+            else
+            {
+                BleConnectStatusLabel.Dispatcher.Dispatch(() =>
+                {
+                    BleConnectStatusLabel.Text = "Disconnected";
+                });
+            }
         }
+
+        //private async Task ConnectToDevice(IDevice device)
+        //{
+        //    var result = await bleService.TryConnectToDevice(device);
+        //    SetBleConnectStatusLabelDispatch(result);
+        //    ConnectCommand = new Command<IDevice>(async (device) => await DisconnectFromDevice(device));
+            
+        //}
+
+        //private async Task DisconnectFromDevice(IDevice device)
+        //{
+        //    await bleService.TryDisconnectFromDevice(device);
+        //    SetBleConnectStatusLabelDispatch(false);
+        //}
 
         private void SetBleConnectStatusLabelDispatch(bool connectResult)
         {
