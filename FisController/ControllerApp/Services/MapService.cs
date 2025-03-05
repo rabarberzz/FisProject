@@ -20,6 +20,7 @@ namespace ControllerApp.Services
             var destination = new Vector2d(56.50672764632251, 25.863789713197978);
             DirectionResource directionResource = new DirectionResource([origin, destination], RoutingProfile.Driving);
             directionResource.Steps = true;
+            directionResource.Overview = Overview.Full;
 
             var directionsResponse = new DirectionsResponse();
 

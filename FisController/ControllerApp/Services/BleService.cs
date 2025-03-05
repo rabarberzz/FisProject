@@ -58,6 +58,35 @@ namespace ControllerApp.Services
             return characters;
         }
 
+        private void SyncDeviceList(ObservableCollection<IDevice> devices)
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                devices.Clear();
+                foreach (var device in adapter.ConnectedDevices)
+                {
+                    if (!devices.Contains(device))
+                    {
+                        devices.Add(device);
+                    }
+                }
+                foreach (var device in adapter.DiscoveredDevices)
+                {
+                    if (!devices.Contains(device))
+                    {
+                        devices.Add(device);
+                    }
+                }
+                foreach (var device in adapter.BondedDevices)
+                {
+                    if (!devices.Contains(device))
+                    {
+                        devices.Add(device);
+                    }
+                }
+            });
+        }
+
         public async Task<bool> TryConnectToDevice(IDevice connectDevice)
         {
             if (adapter != null)
@@ -138,32 +167,10 @@ namespace ControllerApp.Services
             {
                 return;
             }
-            adapter.DeviceDiscovered += (s, a) =>
-            {
-                MainThread.BeginInvokeOnMainThread(() =>
-                {
-                    // clearing to avoid duplicates and not accessible devices
-                    devices.Clear();
-                    devices.Add(a.Device);
-                });
-            };
 
-            adapter.DeviceConnected += (s, a) =>
-            {
-                MainThread.BeginInvokeOnMainThread(() =>
-                {
-                    devices.Remove(a.Device);
-                    devices.Add(a.Device);
-                });
-            };
-
-            adapter.DeviceDisconnected += (s, a) =>
-            {
-                MainThread.BeginInvokeOnMainThread(() =>
-                {
-                    devices.Remove(a.Device);
-                });
-            };
+            adapter.DeviceDiscovered += (s, a) => SyncDeviceList(devices);
+            adapter.DeviceConnected += (s, a) => SyncDeviceList(devices);
+            adapter.DeviceDisconnected += (s, a) => SyncDeviceList(devices);
         }
 
         public async Task SendRadioBytes(string text)

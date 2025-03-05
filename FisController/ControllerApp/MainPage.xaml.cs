@@ -4,6 +4,8 @@ using Mapsui;
 using Mapsui.Extensions;
 using Mapsui.Layers;
 using Mapsui.Nts;
+using Mapsui.Nts.Extensions;
+using Mapsui.Projections;
 using Mapsui.Styles;
 using Mapsui.UI.Maui;
 using Mapsui.Widgets;
@@ -117,17 +119,48 @@ namespace ControllerApp
             if (directions.Code != null)
             {
                 responseEntry.Text = directions.Code;
-                var features = PointsFromDirectionsResponse(directions);
-                var layer = CreatePointLayer(features);
-                mapControl.Map.Info += MapOnInfo;
-                mapControl.Map?.Widgets.Add(new MapInfoWidget(mapControl.Map));
-                mapControl.Map?.Layers.Add(layer);
+                SetupPointsOnMap(directions);
+                SetupLineOnMap(directions);
             }
         }
 
         private void OnHttpRequestFailed(object? sender, Exception e)
         {
             responseEntry.Text = e.Message;
+        }
+
+        private void SetupPointsOnMap(DirectionsResponse directions)
+        {
+            if (mapControl != null && mapControl.Map != null)
+            {
+                
+                var features = ManeuverPointsFromDirectionsResponse(directions);
+                var layer = CreatePointLayer(features);
+                mapControl.Map.Layers.Remove(x => x.Name == "Points");
+                mapControl.Map.Info += MapOnInfo;
+                mapControl.Map.Widgets.Add(new MapInfoWidget(mapControl.Map));
+                mapControl.Map.Layers.Add(layer);
+            }
+        }
+
+        private void SetupLineOnMap(DirectionsResponse directions)
+        {
+            if (mapControl != null && mapControl.Map != null)
+            {
+                var feature = GeometryFeatureFromDirectionsResponse(directions);
+                var layer = CreateLineLayer(feature, CreateLineStringStyle());
+                mapControl.Map.Layers.Add(layer);
+            }
+        }
+
+        private static ILayer CreateLineLayer(GeometryFeature[] geometry, IStyle? style = null)
+        {
+            return new MemoryLayer
+            {
+                Name = "Line",
+                Features = geometry,
+                Style = style,
+            };
         }
 
         private static MemoryLayer CreatePointLayer(IEnumerable<Mapsui.IFeature> features)
@@ -151,7 +184,14 @@ namespace ControllerApp
             }
         }
 
-        private static IEnumerable<Mapsui.IFeature> PointsFromDirectionsResponse(DirectionsResponse directions)
+        private static GeometryFeature[] GeometryFeatureFromDirectionsResponse(DirectionsResponse directions)
+        {
+            var coordinates = directions.Routes.FirstOrDefault()?.Geometry;
+            var lineString = new LineString(coordinates?.Select(coord => SphericalMercator.FromLonLat(coord.y, coord.x).ToCoordinate()).ToArray());
+            return new[] { new GeometryFeature { Geometry = lineString } };
+        }
+
+        private static IEnumerable<Mapsui.IFeature> ManeuverPointsFromDirectionsResponse(DirectionsResponse directions)
         {
             var steps = directions.Routes.FirstOrDefault()?.Legs.FirstOrDefault()?.Steps;
             var features = new List<Mapsui.IFeature>();

@@ -81,9 +81,9 @@ public partial class TestWriteBLE : ContentPage
             templates.Add(new NavigationTemplate
             {
                 CurrentAddress = step.Name,
-                TotalDistance = CalculateRemainingDistance(step, leg.Steps),
+                TotalDistance = CalculateRemainingDistance(step, leg.Steps)/1000,
                 DistanceToNextTurn = (decimal)step.Distance/1000,
-                ArrivalTime = TimeOnly.FromDateTime(DateTime.Now.AddSeconds(step.Duration)),
+                ArrivalTime = TimeOnly.FromDateTime(DateTime.Now.AddSeconds(leg.Duration)),
             });
         }
 
@@ -93,9 +93,19 @@ public partial class TestWriteBLE : ContentPage
     private decimal CalculateRemainingDistance(Step currentStep, List<Step> allSteps)
     {
         decimal distance = 0;
-        var remainingSteps = allSteps;
-        remainingSteps.RemoveRange(allSteps.IndexOf(currentStep), allSteps.Count - allSteps.IndexOf(currentStep));
+        var remainingSteps = allSteps.GetRange(allSteps.IndexOf(currentStep), allSteps.Count - allSteps.IndexOf(currentStep));
         distance = (decimal)remainingSteps.Sum(x => x.Distance);
+
         return distance;
+    }
+
+    // Calculates the arrival time for the next step at each step
+    // Possibly wont be needed
+    private TimeOnly CalculateRemainingDuration(Step currentStep, List<Step> allSteps, double totalDuration)
+    {
+        var duration = new TimeOnly();
+        var remainingSteps = allSteps.GetRange(allSteps.IndexOf(currentStep), allSteps.Count - allSteps.IndexOf(currentStep));
+        var remainingDuration = totalDuration - remainingSteps.Sum(x => x.Duration);
+        return TimeOnly.FromDateTime(DateTime.Now.AddSeconds(remainingDuration));
     }
 }
