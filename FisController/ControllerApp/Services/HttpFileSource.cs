@@ -13,11 +13,12 @@ namespace ControllerApp.Services
         public HttpFileSource()
         {
             _httpClient = new HttpClient();
+            _httpClient.Timeout = TimeSpan.FromSeconds(4);
             _configurationService = IPlatformApplication.Current?.Services.GetService<IConfigurationService>() ?? throw new Exception("Configuration service not found");
             _accessToken = _configurationService.GetAccessToken();
         }
 
-        public IAsyncRequest Request(string url, Action<Response> callback, int timeout = 10)
+        public IAsyncRequest Request(string url, Action<Response> callback, int timeout = 4)
         {
             if (_accessToken != null)
             {

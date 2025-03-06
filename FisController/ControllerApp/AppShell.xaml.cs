@@ -9,6 +9,7 @@
             Routing.RegisterRoute(nameof(MainPage), typeof(MainPage));
             Routing.RegisterRoute(nameof(BluetoothPage), typeof(BluetoothPage));
             Routing.RegisterRoute(nameof(TestWriteBLE), typeof(TestWriteBLE));
+            Routing.RegisterRoute(nameof(NavigationSetup), typeof(NavigationSetup));
         }
     }
 }

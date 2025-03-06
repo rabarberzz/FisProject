@@ -12,6 +12,10 @@
         ContentTemplate="{DataTemplate local:MainPage}"
         Route="MainPage" />
     <ShellContent
+        Title="Navigation Setup"
+        ContentTemplate="{DataTemplate local:NavigationSetup}"
+        Route="NavigationSetup" />
+    <ShellContent
         Title="Bluetooth"
         ContentTemplate="{DataTemplate local:BluetoothPage}"
         Route="BluetoothPage" />

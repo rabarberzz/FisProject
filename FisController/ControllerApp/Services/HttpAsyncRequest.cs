@@ -18,7 +18,6 @@ namespace ControllerApp.Services
             _httpClient = httpClient;
             _callback = callback;
             _requestMessage = new HttpRequestMessage(HttpMethod.Get, url);
-            _httpClient.Timeout = TimeSpan.FromSeconds(timeout);
 
             SendRequestAsync();
         }

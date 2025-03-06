@@ -1,4 +1,5 @@
-﻿using ControllerApp.Services;
+﻿using ControllerApp.SearchBox.Suggestion;
+using ControllerApp.Services;
 using Mapbox.Directions;
 using Mapsui;
 using Mapsui.Extensions;
@@ -31,15 +32,7 @@ namespace ControllerApp
             mapService = mapSvc;
             mapService.DirectionsResponseReceived += OnDirectionsReceived;
             mapService.RequestFailed += OnHttpRequestFailed;
-
-#if WINDOWS
-            var access_token = Environment.GetEnvironmentVariable("MAPBOX_ACCESS_TOKEN");
-            if (!string.IsNullOrEmpty(access_token))
-            {
-                var configService = IPlatformApplication.Current?.Services.GetService<IConfigurationService>();
-                configService?.SetAccessToken(access_token);
-            }
-#endif
+            mapService.SuggestionResponseReceived += OnSugestionReceived;
         }
 
         private async void InitializeMap()
@@ -241,6 +234,19 @@ namespace ControllerApp
                 Line = { Color = Color.BlueViolet, Width = 3 }
             };
 #pragma warning restore CS8670 // Object or collection initializer implicitly dereferences possibly null member.
+        }
+
+        private void OnSugestionReceived(object? sender, SuggestionResponse e)
+        {
+            if (e != null)
+            {
+                responseEntry.Text = "Suggestion response received";
+            }
+        }
+
+        private void SearchButton_Clicked(object sender, EventArgs e)
+        {
+            mapService.GetLocationSuggestion();
         }
     }
 }

@@ -13,6 +13,7 @@
         <mapsui:MapControl x:Name="mapControlElement" Grid.Row="0"/>
         <Button Text="Click Me" HeightRequest="10" Clicked="OnButtonClick" BackgroundColor="Gray" Grid.Row="1" HorizontalOptions="FillAndExpand"/>
         <Entry x:Name="responseEntry" Grid.Row="2" HorizontalOptions="FillAndExpand" />
+        <Button Text="Click Me Search" HeightRequest="10" Clicked="SearchButton_Clicked" BackgroundColor="Gray" Grid.Row="1" HorizontalOptions="FillAndExpand"/>
     </Grid>
 
 </ContentPage>

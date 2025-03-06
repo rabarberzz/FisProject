@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ControllerApp.NavigationSetup"
+             Title="NavigationSetup">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <DataTemplate x:Key="SuggestionItemTemplate">
+                <ViewCell>
+                    <StackLayout Orientation="Vertical" Padding="10">
+                        <Label Text="{Binding Name}" FontAttributes="Bold" />
+                        <Label Text="{Binding Address}" />
+                        <Label Text="{Binding Distance, StringFormat='{0:F2} km'}" />
+                    </StackLayout>
+                </ViewCell>
+            </DataTemplate>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+    
+    <VerticalStackLayout>
+        <Label 
+            Text="Navigation setup page"
+            VerticalOptions="Center" 
+            HorizontalOptions="Center" />
+        <SearchBar x:Name="OriginSearchBar" Placeholder="Start point" TextChanged="SearchBar_TextChanged"/>
+        <ListView x:Name="OriginResultView" ItemTemplate="{StaticResource SuggestionItemTemplate}" ItemSelected="ListViewAddress_Selected" MaximumHeightRequest="200"/>
+        <SearchBar x:Name="DestinationSearchBar" Placeholder="Destination point" TextChanged="SearchBar_TextChanged"/>
+        <ListView x:Name="DestinationResultView" ItemTemplate="{StaticResource SuggestionItemTemplate}" ItemSelected="ListViewAddress_Selected" MaximumHeightRequest="200"/>
+    </VerticalStackLayout>
+</ContentPage>
