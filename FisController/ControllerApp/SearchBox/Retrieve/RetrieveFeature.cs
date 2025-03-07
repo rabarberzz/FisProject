@@ -12,6 +12,6 @@ namespace ControllerApp.SearchBox.Retrieve
         public RetrieveGeometry Geometry { get; set; }
 
         [JsonProperty("properties")]
-        public object Properties { get; set; }
+        public RetrieveProperty Properties { get; set; }
     }
 }

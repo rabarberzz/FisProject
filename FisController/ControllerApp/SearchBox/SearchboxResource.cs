@@ -59,17 +59,12 @@ namespace ControllerApp.SearchBox
 
             if (!string.IsNullOrEmpty(NavigationProfile))
             {
-                parameters.Add("navigationProfile", NavigationProfile.ToLower());
+                parameters.Add("navigation_profile", NavigationProfile.ToLower());
             }
 
             if (endpoint == SearchboxEndpoints.Retrieve)
             {
-                if (!string.IsNullOrEmpty(MapboxId))
-                {
-                    parameters.Add("", MapboxId);
-                }
-
-                return "https://api.mapbox.com/" + ApiEndpoint + endpoint.ToString() + Mapbox.Platform.Resource.EncodeQueryString(parameters);
+                return "https://api.mapbox.com/" + ApiEndpoint + endpoint.ToString()+ $"/{MapboxId}" + Mapbox.Platform.Resource.EncodeQueryString(parameters);
             }
 
             if (!string.IsNullOrEmpty(Query))

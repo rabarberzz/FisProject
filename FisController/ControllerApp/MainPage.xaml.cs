@@ -21,84 +21,42 @@ namespace ControllerApp
     public partial class MainPage : ContentPage
     {
         private MyLocationLayer locationLayer;
-        private Timer locationUpdateTimer;
         private MapControl mapControl;
         private MapService mapService;
+        private NavigationService navigationService;
 
-        public MainPage(MapService mapSvc)
+        public MainPage(MapService mapSvc, NavigationService navSvc)
         {
             InitializeComponent();
             InitializeMap();
             mapService = mapSvc;
             mapService.DirectionsResponseReceived += OnDirectionsReceived;
             mapService.RequestFailed += OnHttpRequestFailed;
-            mapService.SuggestionResponseReceived += OnSugestionReceived;
+
+            navigationService = navSvc;
+            navigationService.LocationUpdated += OnLocationUpdated;
         }
 
-        private async void InitializeMap()
+        private void InitializeMap()
         {
             mapControl = new MapControl();
             mapControl.Map?.Layers.Add(Mapsui.Tiling.OpenStreetMap.CreateTileLayer());
-
-            var currentLocation = await GetCurrentLocationAsync();
-            if (currentLocation != null && mapControl.Map != null)
+            
+            if (mapControl.Map != null)
             {
-                locationLayer = new MyLocationLayer(mapControl.Map, currentLocation);
+                locationLayer = new MyLocationLayer(mapControl.Map);
                 mapControl.Map.Layers.Add(locationLayer);
-
-                StartLocationUpdates();
             }
 
             mapControlElement.Content = mapControl; // Assign mapControl to mapControlElement
         }
 
-        private async Task<MPoint> GetCurrentLocationAsync()
+        private void OnLocationUpdated(object? sender, MPoint locationPoint)
         {
-            try
+            if (locationPoint != null && mapControl.Map != null)
             {
-                var request = new GeolocationRequest(GeolocationAccuracy.High);
-                var location = await Geolocation.GetLocationAsync(request);
-
-                if (location != null)
-                {
-                    var locationMPoint = new MPoint(location.Longitude, location.Latitude);
-                    return Mapsui.Projections.SphericalMercator.FromLonLat(locationMPoint);
-                }
+                locationLayer.UpdateMyLocation(locationPoint);
             }
-            catch (FeatureNotSupportedException fnsEx)
-            {
-                // Handle not supported on device exception
-            }
-            catch (FeatureNotEnabledException fneEx)
-            {
-                // Handle not enabled on device exception
-            }
-            catch (PermissionException pEx)
-            {
-                // Handle permission exception
-            }
-            catch (Exception ex)
-            {
-                // Unable to get location
-            }
-
-            return null;
-        }
-
-        private async Task UpdateLocation()
-        {
-            var currentLocation = await GetCurrentLocationAsync();
-            if (currentLocation != null && mapControl.Map != null)
-            {
-                locationLayer.UpdateMyLocation(currentLocation);
-            }
-        }
-
-        private void StartLocationUpdates()
-        {
-            locationUpdateTimer = new Timer(2000);
-            locationUpdateTimer.Elapsed += async (sender, e) => await UpdateLocation();
-            locationUpdateTimer.Start();
         }
 
         private void OnButtonClick(object sender, EventArgs e)
@@ -140,6 +98,7 @@ namespace ControllerApp
         {
             if (mapControl != null && mapControl.Map != null)
             {
+                mapControl.Map.Layers.Remove(x => x.Name == "Line");
                 var feature = GeometryFeatureFromDirectionsResponse(directions);
                 var layer = CreateLineLayer(feature, CreateLineStringStyle());
                 mapControl.Map.Layers.Add(layer);
@@ -234,19 +193,6 @@ namespace ControllerApp
                 Line = { Color = Color.BlueViolet, Width = 3 }
             };
 #pragma warning restore CS8670 // Object or collection initializer implicitly dereferences possibly null member.
-        }
-
-        private void OnSugestionReceived(object? sender, SuggestionResponse e)
-        {
-            if (e != null)
-            {
-                responseEntry.Text = "Suggestion response received";
-            }
-        }
-
-        private void SearchButton_Clicked(object sender, EventArgs e)
-        {
-            mapService.GetLocationSuggestion();
         }
     }
 }

@@ -8,10 +8,10 @@
         <ResourceDictionary>
             <DataTemplate x:Key="SuggestionItemTemplate">
                 <ViewCell>
-                    <StackLayout Orientation="Vertical" Padding="10">
-                        <Label Text="{Binding Name}" FontAttributes="Bold" />
-                        <Label Text="{Binding Address}" />
-                        <Label Text="{Binding Distance, StringFormat='{0:F2} km'}" />
+                    <StackLayout Orientation="Horizontal" Padding="10" >
+                        <Label Text="{Binding Name}" FontAttributes="Bold" Padding="3"/>
+                        <Label Text="{Binding Address}" Padding="3"/>
+                        <Label Text="{Binding Distance, StringFormat='{0:F2} km'}" Padding="3" TextColor="PaleVioletRed"/>
                     </StackLayout>
                 </ViewCell>
             </DataTemplate>

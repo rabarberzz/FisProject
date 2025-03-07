@@ -3,6 +3,8 @@ using ControllerApp.SearchBox.Retrieve;
 using ControllerApp.SearchBox.Suggestion;
 using Mapbox.Directions;
 using Mapbox.Utils;
+using Mapsui;
+using Mapsui.Nts.Extensions;
 
 namespace ControllerApp.Services
 {
@@ -63,7 +65,7 @@ namespace ControllerApp.Services
             suggestions.Query(searchboxResource, OnSuggestionsResponseReceived);
         }
 
-        public void GetLocationSuggestion(string searchQuery)
+        public void GetLocationSuggestion(string searchQuery, MPoint? locationPoint = null)
         {
             if (searchboxSessionToken == null)
             {
@@ -73,17 +75,23 @@ namespace ControllerApp.Services
             Suggestions suggestions = new Suggestions(fileSource);
             SearchboxResource searchboxResource = new SearchboxResource(SearchboxEndpoints.Suggest, searchboxSessionToken.Value);
             searchboxResource.Query = searchQuery;
-            
+            if (locationPoint != null)
+            {
+                // {(X=2817593,248990337,Y=7599151,766696218)}
+                searchboxResource.Proximity = $"{locationPoint.X},{locationPoint.Y}";
+                searchboxResource.NavigationProfile = "driving";
+            }
+
             suggestions.Query(searchboxResource, OnSuggestionsResponseReceived);
         }
 
-        public void GetSuggestionRetrieve(SuggestionResponse suggestion)
+        public void GetSuggestionRetrieve(SuggestionObject suggestion)
         {
             if (searchboxSessionToken != null)
             {
                 Retrieve retrieve = new Retrieve(fileSource);
                 SearchboxResource searchboxResource = new SearchboxResource(SearchboxEndpoints.Retrieve, searchboxSessionToken.Value);
-                searchboxResource.MapboxId = suggestion.Suggestions.FirstOrDefault()?.MapboxId;
+                searchboxResource.MapboxId = suggestion.MapboxId;
 
                 retrieve.Query(searchboxResource, OnRetrieveResponseReceived);
             }
