@@ -11,8 +11,10 @@ namespace ControllerApp.Services
     public class NavigationService
     {
         private Timer locationUpdateTimer;
-        public event EventHandler<MPoint>? LocationUpdated;
-        public MPoint? CurrentLocation { get; private set; }
+        public event EventHandler<MPoint>? LocationUpdatedMapsui;
+        public event EventHandler<Location>? LocationUpdated;
+        public Location? CurrentLocation { get; private set; }
+        public event EventHandler<Exception>? LocationUpdateFailed;
 
         public NavigationService()
         {
@@ -23,7 +25,7 @@ namespace ControllerApp.Services
 
         private void UpdateLocation(object? sender, EventArgs e)
         {
-            _ = InvokeCurrentLocationAsync();
+            MainThread.InvokeOnMainThreadAsync(InvokeCurrentLocationAsync);
         }
 
         private async Task InvokeCurrentLocationAsync()
@@ -33,28 +35,38 @@ namespace ControllerApp.Services
                 var request = new GeolocationRequest(GeolocationAccuracy.High);
                 var location = await Geolocation.GetLocationAsync(request);
 
+                if (location == null)
+                {
+                    location = await Geolocation.GetLastKnownLocationAsync();
+                }
+
                 if (location != null)
                 {
                     var locationMPoint = new MPoint(location.Longitude, location.Latitude);
-                    LocationUpdated?.Invoke(this, Mapsui.Projections.SphericalMercator.FromLonLat(locationMPoint));
-                    CurrentLocation = Mapsui.Projections.SphericalMercator.FromLonLat(locationMPoint);
+                    LocationUpdatedMapsui?.Invoke(this, Mapsui.Projections.SphericalMercator.FromLonLat(locationMPoint));
+                    LocationUpdated?.Invoke(this, location);
+                    CurrentLocation = location;
                 }
             }
             catch (FeatureNotSupportedException fnsEx)
             {
                 // Handle not supported on device exception
+                LocationUpdateFailed?.Invoke(this, fnsEx);
             }
             catch (FeatureNotEnabledException fneEx)
             {
                 // Handle not enabled on device exception
+                LocationUpdateFailed?.Invoke(this, fneEx);
             }
             catch (PermissionException pEx)
             {
                 // Handle permission exception
+                LocationUpdateFailed?.Invoke(this, pEx);
             }
             catch (Exception ex)
             {
                 // Unable to get location
+                LocationUpdateFailed?.Invoke(this, ex);
             }
         }
     }

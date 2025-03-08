@@ -34,7 +34,8 @@ namespace ControllerApp
             mapService.RequestFailed += OnHttpRequestFailed;
 
             navigationService = navSvc;
-            navigationService.LocationUpdated += OnLocationUpdated;
+            navigationService.LocationUpdatedMapsui += OnLocationUpdated;
+            navigationService.LocationUpdateFailed += OnExceptionAlert;
         }
 
         private void InitializeMap()
@@ -78,6 +79,11 @@ namespace ControllerApp
         private void OnHttpRequestFailed(object? sender, Exception e)
         {
             responseEntry.Text = e.Message;
+        }
+
+        private void OnExceptionAlert(object? sender, Exception exception)
+        {
+            MainThread.BeginInvokeOnMainThread(() => DisplayAlert("Error", exception.Message, "OK"));
         }
 
         private void SetupPointsOnMap(DirectionsResponse directions)

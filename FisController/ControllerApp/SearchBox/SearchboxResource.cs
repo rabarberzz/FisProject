@@ -41,6 +41,7 @@ namespace ControllerApp.SearchBox
         public override string GetUrl()
         {
             Dictionary<string, string> parameters = new Dictionary<string, string>();
+            var proximity = "";
 
             if (!string.IsNullOrEmpty(Language))
             {
@@ -79,7 +80,7 @@ namespace ControllerApp.SearchBox
 
             if (!string.IsNullOrEmpty(Proximity))
             {
-                parameters.Add("proximity", Proximity.ToLower());
+                proximity = "&proximity=" + Proximity;
             }
 
             if (!string.IsNullOrEmpty(Bbox))
@@ -97,7 +98,7 @@ namespace ControllerApp.SearchBox
                 parameters.Add("types", Types.ToLower());
             }
 
-            return "https://api.mapbox.com/" + ApiEndpoint + endpoint.ToString() + Mapbox.Platform.Resource.EncodeQueryString(parameters);
+            return "https://api.mapbox.com/" + ApiEndpoint + endpoint.ToString() + Mapbox.Platform.Resource.EncodeQueryString(parameters) + proximity;
         }
     }
 }

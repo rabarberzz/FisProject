@@ -41,7 +41,7 @@ public partial class TestWriteBLE : ContentPage
         }
     }
 
-    private void OnDeviceConnected(object sender, DeviceEventArgs e)
+    private void OnDeviceConnected(object? sender, DeviceEventArgs e)
     {
         MainThread.BeginInvokeOnMainThread(() =>
         {

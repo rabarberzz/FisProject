@@ -3,8 +3,7 @@ using ControllerApp.SearchBox.Retrieve;
 using ControllerApp.SearchBox.Suggestion;
 using Mapbox.Directions;
 using Mapbox.Utils;
-using Mapsui;
-using Mapsui.Nts.Extensions;
+using System.Globalization;
 
 namespace ControllerApp.Services
 {
@@ -65,7 +64,7 @@ namespace ControllerApp.Services
             suggestions.Query(searchboxResource, OnSuggestionsResponseReceived);
         }
 
-        public void GetLocationSuggestion(string searchQuery, MPoint? locationPoint = null)
+        public void GetLocationSuggestion(string searchQuery, Location? locationPoint = null)
         {
             if (searchboxSessionToken == null)
             {
@@ -77,8 +76,8 @@ namespace ControllerApp.Services
             searchboxResource.Query = searchQuery;
             if (locationPoint != null)
             {
-                // {(X=2817593,248990337,Y=7599151,766696218)}
-                searchboxResource.Proximity = $"{locationPoint.X},{locationPoint.Y}";
+                searchboxResource.Proximity = $"{locationPoint.Longitude.ToString(CultureInfo.InvariantCulture)},{locationPoint.Latitude.ToString(CultureInfo.InvariantCulture)}";
+                
                 searchboxResource.NavigationProfile = "driving";
             }
 

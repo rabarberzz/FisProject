@@ -17,7 +17,7 @@ public partial class NavigationSetup : ContentPage
     private SuggestionObject? selectedDestinationSuggestion;
     private RetrieveResponse? retrieveResponseOrigin;
     private RetrieveResponse? retrieveResponseDestination;
-    private MPoint? locationPoint;
+    private Location? locationPoint;
 
     public NavigationSetup(MapService mapService, NavigationService navService)
 	{
@@ -25,12 +25,18 @@ public partial class NavigationSetup : ContentPage
 		this.mapService = mapService;
         this.mapService.SuggestionResponseReceived += MapService_SuggestionResponseReceived;
         this.mapService.RetrieveResponseReceived += MapService_RetrieveResponseReceived;
+        this.mapService.RequestFailed += MapService_RequestFailed;
 
         navigationService = navService;
         navigationService.LocationUpdated += NavigationService_LocationUpdated;
     }
 
-    private void NavigationService_LocationUpdated(object? sender, MPoint e)
+    private void MapService_RequestFailed(object? sender, Exception e)
+    {
+        DisplayAlert("Error", e.Message, "OK");
+    }
+
+    private void NavigationService_LocationUpdated(object? sender, Location e)
     {
         locationPoint = e;
     }
@@ -66,7 +72,7 @@ public partial class NavigationSetup : ContentPage
 
     private void MapService_SuggestionResponseReceived(object? sender, SuggestionResponse e)
     {
-        if (currentTargetListView != null && e.Suggestions.Count > 0)
+        if (currentTargetListView != null && e.Suggestions != null && e.Suggestions.Count > 0)
         {
             currentTargetListView.ItemsSource = e.Suggestions;
         }
@@ -86,7 +92,7 @@ public partial class NavigationSetup : ContentPage
 
 		    if (searchBox == DestinationSearchBar)
 		    {
-                mapService.GetLocationSuggestion(searchBox.Text);
+                mapService.GetLocationSuggestion(searchBox.Text, locationPoint);
                 currentTargetListView = DestinationResultView;
             }
         }

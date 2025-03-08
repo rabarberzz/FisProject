@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:ControllerApp.Converters"
              x:Class="ControllerApp.NavigationSetup"
              Title="NavigationSetup">
 
     <ContentPage.Resources>
         <ResourceDictionary>
+            <local:MetersToKilometersConverter x:Key="MetersToKilometersConverter" />
             <DataTemplate x:Key="SuggestionItemTemplate">
                 <ViewCell>
                     <StackLayout Orientation="Horizontal" Padding="10" >
                         <Label Text="{Binding Name}" FontAttributes="Bold" Padding="3"/>
                         <Label Text="{Binding Address}" Padding="3"/>
-                        <Label Text="{Binding Distance, StringFormat='{0:F2} km'}" Padding="3" TextColor="PaleVioletRed"/>
+                        <Label Text="{Binding Distance, Converter={StaticResource MetersToKilometersConverter}, StringFormat='{0:F2} km'}" Padding="3" TextColor="PaleVioletRed"/>
                     </StackLayout>
                 </ViewCell>
             </DataTemplate>

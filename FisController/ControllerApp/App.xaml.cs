@@ -15,12 +15,25 @@ namespace ControllerApp
                 var configService = IPlatformApplication.Current?.Services.GetService<IConfigurationService>();
                 configService?.SetAccessToken(access_token);
             }
+            RequestLocationPermission();
 #endif
         }
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
             return new Window(new AppShell());
+        }
+
+        private void RequestLocationPermission()
+        {
+            MainThread.BeginInvokeOnMainThread(async () =>
+            {
+                var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
+                if (status != PermissionStatus.Granted)
+                {
+                    status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+                }
+            });
         }
     }
 }
