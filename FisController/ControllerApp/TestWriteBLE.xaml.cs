@@ -10,8 +10,8 @@ public partial class TestWriteBLE : ContentPage
     private readonly BleService bleService;
     private readonly FisNavigationService fisNavigationService;
     private NavigationTemplate naviTemplate = new NavigationTemplate();
-    private MapService mapService;
-    public TestWriteBLE(BleService bleService, MapService map)
+    private MapboxService mapboxService;
+    public TestWriteBLE(BleService bleService, MapboxService mapbox)
 	{
 		InitializeComponent();
         this.bleService = bleService;
@@ -21,8 +21,8 @@ public partial class TestWriteBLE : ContentPage
 
         bleService.SetupConnectedEvent(OnDeviceConnected);
 
-        mapService = map;
-        mapService.DirectionsResponseReceived += DirectionsResponseReceived;
+        mapboxService = mapbox;
+        mapboxService.DirectionsResponseReceived += DirectionsResponseReceived;
     }
 
     private async void WriteNaviEntry_Completed(object sender, EventArgs e)

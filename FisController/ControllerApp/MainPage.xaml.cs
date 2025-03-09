@@ -1,78 +1,55 @@
-﻿using ControllerApp.SearchBox.Suggestion;
-using ControllerApp.Services;
+﻿using ControllerApp.Services;
 using Mapbox.Directions;
 using Mapsui;
-using Mapsui.Extensions;
-using Mapsui.Layers;
-using Mapsui.Nts;
-using Mapsui.Nts.Extensions;
 using Mapsui.Projections;
-using Mapsui.Styles;
-using Mapsui.UI.Maui;
-using Mapsui.Widgets;
-using NetTopologySuite.Features;
-using NetTopologySuite.Geometries;
-using NetTopologySuite.IO;
-using Color = Mapsui.Styles.Color;
-using Timer = System.Timers.Timer;
 
 namespace ControllerApp
 {
     public partial class MainPage : ContentPage
     {
-        private MyLocationLayer locationLayer;
-        private MapControl mapControl;
-        private MapService mapService;
+        private MapboxService mapboxService;
         private NavigationService navigationService;
+        private MapsuiService mapsuiService;
+        private DirectionsResponse? localResponse;
 
-        public MainPage(MapService mapSvc, NavigationService navSvc)
+        public MainPage(MapboxService mapboxSvc, NavigationService navSvc, MapsuiService mapsuiSvc)
         {
             InitializeComponent();
-            InitializeMap();
-            mapService = mapSvc;
-            mapService.DirectionsResponseReceived += OnDirectionsReceived;
-            mapService.RequestFailed += OnHttpRequestFailed;
+            mapboxService = mapboxSvc;
+            mapboxService.DirectionsResponseReceived += OnDirectionsReceived;
+            mapboxService.RequestFailed += OnHttpRequestFailed;
 
             navigationService = navSvc;
             navigationService.LocationUpdatedMapsui += OnLocationUpdated;
             navigationService.LocationUpdateFailed += OnExceptionAlert;
-        }
 
-        private void InitializeMap()
-        {
-            mapControl = new MapControl();
-            mapControl.Map?.Layers.Add(Mapsui.Tiling.OpenStreetMap.CreateTileLayer());
-            
-            if (mapControl.Map != null)
-            {
-                locationLayer = new MyLocationLayer(mapControl.Map);
-                mapControl.Map.Layers.Add(locationLayer);
-            }
+            mapsuiService = mapsuiSvc;
 
-            mapControlElement.Content = mapControl; // Assign mapControl to mapControlElement
+            mapControlElement.Content = mapsuiService.MapControl;
         }
 
         private void OnLocationUpdated(object? sender, MPoint locationPoint)
         {
-            if (locationPoint != null && mapControl.Map != null)
+            if (locationPoint != null && mapsuiService.MapControl.Map != null)
             {
-                locationLayer.UpdateMyLocation(locationPoint);
+                mapsuiService.LocationLayer.UpdateMyLocation(locationPoint);
             }
         }
 
         private void OnButtonClick(object sender, EventArgs e)
         {
-            mapService.GetDirections();
+            mapboxService.GetDirections();
         }
 
         private void OnDirectionsReceived(object? sender, DirectionsResponse response)
         {
             var directions = response;
-            if (directions.Code != null)
+            if (directions.Code != null && mapsuiService != null)
             {
                 responseEntry.Text = directions.Code;
-                SetupPointsOnMap(directions);
-                SetupLineOnMap(directions);
+                mapsuiService.SetupPointsOnMap(directions);
+                mapsuiService.SetupLineOnMap(directions);
+                localResponse = response;
             }
         }
 
@@ -86,119 +63,38 @@ namespace ControllerApp
             MainThread.BeginInvokeOnMainThread(() => DisplayAlert("Error", exception.Message, "OK"));
         }
 
-        private void SetupPointsOnMap(DirectionsResponse directions)
+        private void ClosestPoint_Clicked(object sender, EventArgs e)
         {
-            if (mapControl != null && mapControl.Map != null)
+            var location = navigationService.CurrentLocation;
+            if (location != null)
             {
-                
-                var features = ManeuverPointsFromDirectionsResponse(directions);
-                var layer = CreatePointLayer(features);
-                mapControl.Map.Layers.Remove(x => x.Name == "Points");
-                mapControl.Map.Info += MapOnInfo;
-                mapControl.Map.Widgets.Add(new MapInfoWidget(mapControl.Map));
-                mapControl.Map.Layers.Add(layer);
-            }
-        }
+                var locationMPoint = new MPoint(location.Longitude, location.Latitude);
+                var convertedLocation = Mapsui.Projections.SphericalMercator.FromLonLat(locationMPoint);
+                var result = mapsuiService.GetClosestGeometryPointFromCoordinates(convertedLocation);
 
-        private void SetupLineOnMap(DirectionsResponse directions)
-        {
-            if (mapControl != null && mapControl.Map != null)
-            {
-                mapControl.Map.Layers.Remove(x => x.Name == "Line");
-                var feature = GeometryFeatureFromDirectionsResponse(directions);
-                var layer = CreateLineLayer(feature, CreateLineStringStyle());
-                mapControl.Map.Layers.Add(layer);
-            }
-        }
-
-        private static ILayer CreateLineLayer(GeometryFeature[] geometry, IStyle? style = null)
-        {
-            return new MemoryLayer
-            {
-                Name = "Line",
-                Features = geometry,
-                Style = style,
-            };
-        }
-
-        private static MemoryLayer CreatePointLayer(IEnumerable<Mapsui.IFeature> features)
-        {
-            return new MemoryLayer
-            {
-                Name = "Points",
-                IsMapInfoLayer = true,
-                Features = features,
-                Style = Mapsui.Styles.SymbolStyles.CreatePinStyle(),
-            };
-        }
-
-        private static void MapOnInfo(object? sender, MapInfoEventArgs e)
-        {
-            var calloutStyle = e.MapInfo?.Feature?.Styles.Where(s => s is CalloutStyle).Cast<CalloutStyle>().FirstOrDefault();
-            if (calloutStyle != null)
-            {
-                calloutStyle.Enabled = !calloutStyle.Enabled;
-                e.MapInfo?.Layer?.DataHasChanged();
-            }
-        }
-
-        private static GeometryFeature[] GeometryFeatureFromDirectionsResponse(DirectionsResponse directions)
-        {
-            var coordinates = directions.Routes.FirstOrDefault()?.Geometry;
-            var lineString = new LineString(coordinates?.Select(coord => SphericalMercator.FromLonLat(coord.y, coord.x).ToCoordinate()).ToArray());
-            return new[] { new GeometryFeature { Geometry = lineString } };
-        }
-
-        private static IEnumerable<Mapsui.IFeature> ManeuverPointsFromDirectionsResponse(DirectionsResponse directions)
-        {
-            var steps = directions.Routes.FirstOrDefault()?.Legs.FirstOrDefault()?.Steps;
-            var features = new List<Mapsui.IFeature>();
-
-            if (steps != null)
-            {
-                foreach (var step in steps)
+                var convertedResult = new MPoint();
+                if (result != null)
                 {
-                    var maneuver = step.Maneuver;
-                    var tempMPoint = new MPoint(maneuver.Location.y, maneuver.Location.x);
-                    var feature = new PointFeature(Mapsui.Projections.SphericalMercator.FromLonLat(tempMPoint));
-                    feature["Instruction"] = maneuver.Instruction;
-                    feature["Modifier"] = maneuver.Modifier ?? "none";
-                    feature["Type"] = maneuver.Type;
-                    feature["Exit"] = maneuver.Exit;
-                    feature.Styles.Add(CreateCalloutStyle(feature.ToStringOfKeyValuePairs()));
-                    features.Add(feature);
+                    convertedResult = SphericalMercator.ToLonLat(new MPoint(result.X, result.Y));
                 }
             }
-
-            return features;
         }
 
-        private static CalloutStyle CreateCalloutStyle(string content)
+        private void ComparisonButtonClicked(object sender, EventArgs e)
         {
-            return new CalloutStyle
-            {
-                Title = content,
-                TitleFont = { FontFamily = null, Size = 12, Italic = false, Bold = true },
-                TitleFontColor = Color.Gray,
-                MaxWidth = 120,
-                RectRadius = 10,
-                ShadowWidth = 4,
-                Enabled = false,
-                SymbolOffset = new Offset(0, SymbolStyle.DefaultHeight * 1f)
-            };
+            mapsuiService.CalculateDistanceBetweenPoints();
         }
 
-
-        private static IStyle CreateLineStringStyle()
+        private void CalculateToManeuverClicked(object sender, EventArgs e)
         {
-#pragma warning disable CS8670 // Object or collection initializer implicitly dereferences possibly null member.
-            return new VectorStyle
+            var location = navigationService.CurrentLocation;
+            if (location != null)
             {
-                Fill = null,
-                Outline = null,
-                Line = { Color = Color.BlueViolet, Width = 3 }
-            };
-#pragma warning restore CS8670 // Object or collection initializer implicitly dereferences possibly null member.
+                var locationMPoint = new MPoint(location.Longitude, location.Latitude);
+                var convertedLocation = Mapsui.Projections.SphericalMercator.FromLonLat(locationMPoint);
+
+                mapsuiService.CalculateDistanceStraightToPoint(convertedLocation);
+            }
         }
     }
 }

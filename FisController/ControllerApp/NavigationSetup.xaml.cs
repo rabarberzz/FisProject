@@ -9,7 +9,7 @@ namespace ControllerApp;
 
 public partial class NavigationSetup : ContentPage
 {
-	private MapService mapService;
+	private MapboxService mapboxService;
     private NavigationService navigationService;
 
     private ListView? currentTargetListView;
@@ -19,19 +19,19 @@ public partial class NavigationSetup : ContentPage
     private RetrieveResponse? retrieveResponseDestination;
     private Location? locationPoint;
 
-    public NavigationSetup(MapService mapService, NavigationService navService)
+    public NavigationSetup(MapboxService mapbService, NavigationService navService)
 	{
 		InitializeComponent();
-		this.mapService = mapService;
-        this.mapService.SuggestionResponseReceived += MapService_SuggestionResponseReceived;
-        this.mapService.RetrieveResponseReceived += MapService_RetrieveResponseReceived;
-        this.mapService.RequestFailed += MapService_RequestFailed;
+		this.mapboxService = mapbService;
+        this.mapboxService.SuggestionResponseReceived += MapboxService_SuggestionResponseReceived;
+        this.mapboxService.RetrieveResponseReceived += MapboxService_RetrieveResponseReceived;
+        this.mapboxService.RequestFailed += MapboxService_RequestFailed;
 
         navigationService = navService;
         navigationService.LocationUpdated += NavigationService_LocationUpdated;
     }
 
-    private void MapService_RequestFailed(object? sender, Exception e)
+    private void MapboxService_RequestFailed(object? sender, Exception e)
     {
         DisplayAlert("Error", e.Message, "OK");
     }
@@ -41,7 +41,7 @@ public partial class NavigationSetup : ContentPage
         locationPoint = e;
     }
 
-    private void MapService_RetrieveResponseReceived(object? sender, RetrieveResponse e)
+    private void MapboxService_RetrieveResponseReceived(object? sender, RetrieveResponse e)
     {
         if (e != null && e.Features.Count > 0)
         {
@@ -65,12 +65,12 @@ public partial class NavigationSetup : ContentPage
                 var destinationFeature = retrieveResponseDestination.Features.First();
                 Vector2d destination = new(destinationFeature.Geometry.Coordinates[1], destinationFeature.Geometry.Coordinates[0]);
 
-                mapService.GetDirections(origin, destination);
+                mapboxService.GetDirections(origin, destination);
             }
         }
     }
 
-    private void MapService_SuggestionResponseReceived(object? sender, SuggestionResponse e)
+    private void MapboxService_SuggestionResponseReceived(object? sender, SuggestionResponse e)
     {
         if (currentTargetListView != null && e.Suggestions != null && e.Suggestions.Count > 0)
         {
@@ -86,13 +86,13 @@ public partial class NavigationSetup : ContentPage
         {
             if (searchBox == OriginSearchBar)
 		    {
-                mapService.GetLocationSuggestion(searchBox.Text, locationPoint);
+                mapboxService.GetLocationSuggestion(searchBox.Text, locationPoint);
                 currentTargetListView = OriginResultView;
             }
 
 		    if (searchBox == DestinationSearchBar)
 		    {
-                mapService.GetLocationSuggestion(searchBox.Text, locationPoint);
+                mapboxService.GetLocationSuggestion(searchBox.Text, locationPoint);
                 currentTargetListView = DestinationResultView;
             }
         }
@@ -113,7 +113,7 @@ public partial class NavigationSetup : ContentPage
             {
                 selectedDestinationSuggestion = suggestionObject;
             }
-            mapService.GetSuggestionRetrieve(suggestionObject);
+            mapboxService.GetSuggestionRetrieve(suggestionObject);
         }
     }
 }

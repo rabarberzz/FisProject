@@ -9,10 +9,17 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <mapsui:MapControl x:Name="mapControlElement" Grid.Row="0"/>
         <Button Text="Click Me" HeightRequest="10" Clicked="OnButtonClick" BackgroundColor="Gray" Grid.Row="1" HorizontalOptions="FillAndExpand"/>
         <Entry x:Name="responseEntry" Grid.Row="2" HorizontalOptions="FillAndExpand" />
+
+        <StackLayout Orientation="Horizontal" Grid.Row="3" HorizontalOptions="FillAndExpand">
+            <Button Text="Closest point" HeightRequest="10" Clicked="ClosestPoint_Clicked" BackgroundColor="Gray" Grid.Row="3" HorizontalOptions="FillAndExpand"/>
+            <Button Text="Calculate distance" HeightRequest="10" Clicked="ComparisonButtonClicked" BackgroundColor="Gray" HorizontalOptions="FillAndExpand"/>
+            <Button Text="Calculate to maneuver" HeightRequest="10" Clicked="CalculateToManeuverClicked" BackgroundColor="Gray" HorizontalOptions="FillAndExpand"/>
+        </StackLayout>
     </Grid>
 
 </ContentPage>

@@ -22,9 +22,10 @@ namespace ControllerApp
             builder.Services.AddSingleton<IConfigurationService, ConfigurationService>();
             builder.Services.AddSingleton<HttpFileSource>();
             builder.Services.AddSingleton<NavigationService>();
-            builder.Services.AddSingleton<MapService>();
+            builder.Services.AddSingleton<MapboxService>();
             builder.Services.AddTransient<BluetoothPage>();
             builder.Services.AddSingleton<BleService>();
+            builder.Services.AddSingleton<MapsuiService>();
             builder.Services.AddTransient<DevicesViewModel>(provider =>
             {
                 var bleService = provider.GetRequiredService<BleService>();
