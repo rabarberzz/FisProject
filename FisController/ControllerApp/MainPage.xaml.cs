@@ -8,20 +8,20 @@ namespace ControllerApp
     public partial class MainPage : ContentPage
     {
         private MapboxService mapboxService;
-        private NavigationService navigationService;
+        private LocationService locationService;
         private MapsuiService mapsuiService;
         private DirectionsResponse? localResponse;
 
-        public MainPage(MapboxService mapboxSvc, NavigationService navSvc, MapsuiService mapsuiSvc)
+        public MainPage(MapboxService mapboxSvc, LocationService locationSvc, MapsuiService mapsuiSvc)
         {
             InitializeComponent();
             mapboxService = mapboxSvc;
             mapboxService.DirectionsResponseReceived += OnDirectionsReceived;
             mapboxService.RequestFailed += OnHttpRequestFailed;
 
-            navigationService = navSvc;
-            navigationService.LocationUpdatedMapsui += OnLocationUpdated;
-            navigationService.LocationUpdateFailed += OnExceptionAlert;
+            locationService = locationSvc;
+            locationService.LocationUpdatedMapsui += OnLocationUpdated;
+            locationService.LocationUpdateFailed += OnExceptionAlert;
 
             mapsuiService = mapsuiSvc;
 
@@ -65,7 +65,7 @@ namespace ControllerApp
 
         private void ClosestPoint_Clicked(object sender, EventArgs e)
         {
-            var location = navigationService.CurrentLocation;
+            var location = locationService.CurrentLocation;
             if (location != null)
             {
                 var locationMPoint = new MPoint(location.Longitude, location.Latitude);
@@ -87,7 +87,7 @@ namespace ControllerApp
 
         private void CalculateToManeuverClicked(object sender, EventArgs e)
         {
-            var location = navigationService.CurrentLocation;
+            var location = locationService.CurrentLocation;
             if (location != null)
             {
                 var locationMPoint = new MPoint(location.Longitude, location.Latitude);

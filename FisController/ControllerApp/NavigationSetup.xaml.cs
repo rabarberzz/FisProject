@@ -10,6 +10,7 @@ namespace ControllerApp;
 public partial class NavigationSetup : ContentPage
 {
 	private MapboxService mapboxService;
+    private LocationService locationService;
     private NavigationService navigationService;
 
     private ListView? currentTargetListView;
@@ -19,7 +20,7 @@ public partial class NavigationSetup : ContentPage
     private RetrieveResponse? retrieveResponseDestination;
     private Location? locationPoint;
 
-    public NavigationSetup(MapboxService mapbService, NavigationService navService)
+    public NavigationSetup(MapboxService mapbService, LocationService locService, NavigationService navService)
 	{
 		InitializeComponent();
 		this.mapboxService = mapbService;
@@ -27,8 +28,10 @@ public partial class NavigationSetup : ContentPage
         this.mapboxService.RetrieveResponseReceived += MapboxService_RetrieveResponseReceived;
         this.mapboxService.RequestFailed += MapboxService_RequestFailed;
 
+        locationService = locService;
+        locationService.LocationUpdated += NavigationService_LocationUpdated;
+
         navigationService = navService;
-        navigationService.LocationUpdated += NavigationService_LocationUpdated;
     }
 
     private void MapboxService_RequestFailed(object? sender, Exception e)
@@ -39,6 +42,20 @@ public partial class NavigationSetup : ContentPage
     private void NavigationService_LocationUpdated(object? sender, Location e)
     {
         locationPoint = e;
+    }
+
+    private void StartNavigation_Clicked(object? sender, EventArgs e)
+    {
+        if (!navigationService.NavigationSessionStarted)
+        {
+            navigationService.StartNavigation();
+            NavigationSessionButton.Text = "End Navigation";
+        }
+        else
+        {
+            navigationService.StopNavigation();
+            NavigationSessionButton.Text = "Start Navigation";
+        }
     }
 
     private void MapboxService_RetrieveResponseReceived(object? sender, RetrieveResponse e)

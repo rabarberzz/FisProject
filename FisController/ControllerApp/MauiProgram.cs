@@ -21,7 +21,7 @@ namespace ControllerApp
 
             builder.Services.AddSingleton<IConfigurationService, ConfigurationService>();
             builder.Services.AddSingleton<HttpFileSource>();
-            builder.Services.AddSingleton<NavigationService>();
+            builder.Services.AddSingleton<LocationService>();
             builder.Services.AddSingleton<MapboxService>();
             builder.Services.AddTransient<BluetoothPage>();
             builder.Services.AddSingleton<BleService>();

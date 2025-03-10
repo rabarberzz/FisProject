@@ -3,6 +3,10 @@ using System.Text;
 
 namespace ControllerApp.Resources
 {
+    /// <summary>
+    /// Navigation template class for displaying navigation information.
+    /// To be used for initial setup of navigation data.
+    /// </summary>
     public class NavigationTemplate
     {
         private string currentAddress = "null";

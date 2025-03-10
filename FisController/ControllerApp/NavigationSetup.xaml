@@ -29,5 +29,6 @@
         <ListView x:Name="OriginResultView" ItemTemplate="{StaticResource SuggestionItemTemplate}" ItemSelected="ListViewAddress_Selected" MaximumHeightRequest="200"/>
         <SearchBar x:Name="DestinationSearchBar" Placeholder="Destination point" TextChanged="SearchBar_TextChanged"/>
         <ListView x:Name="DestinationResultView" ItemTemplate="{StaticResource SuggestionItemTemplate}" ItemSelected="ListViewAddress_Selected" MaximumHeightRequest="200"/>
+        <Button x:Name="NavigationSessionButton" Text="Start navigation" Clicked="StartNavigation_Clicked"/>
     </VerticalStackLayout>
 </ContentPage>
