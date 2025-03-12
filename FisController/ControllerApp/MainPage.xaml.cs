@@ -82,7 +82,7 @@ namespace ControllerApp
 
         private void ComparisonButtonClicked(object sender, EventArgs e)
         {
-            mapsuiService.CalculateDistanceBetweenPoints();
+            
         }
 
         private void CalculateToManeuverClicked(object sender, EventArgs e)

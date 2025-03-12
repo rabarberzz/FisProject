@@ -1,5 +1,8 @@
 ﻿using ControllerApp.Resources;
 using Mapbox.Directions;
+using Mapsui;
+using Mapsui.Extensions;
+using Mapsui.Projections;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,11 +29,13 @@ namespace ControllerApp.Services
         private MapsuiService mapsuiService;
 
         private DirectionsResponse? currentDirectionsResponse;
+        private Dictionary<Step, NavigationTemplate>? templateMap;
+        private Maneuver? currentManeuver;
+        private double remainingDistance;
 
         public bool NavigationSessionStarted { get; private set; } = false;
 
-        public NavigationService(BleService bleSvc, 
-            FisNavigationService fisNavSvc, LocationService locSvc,
+        public NavigationService(BleService bleSvc, FisNavigationService fisNavSvc, LocationService locSvc,
             MapboxService mapBoxSvc, MapsuiService mapsuiSvc)
         {
             bleService = bleSvc;
@@ -42,14 +47,18 @@ namespace ControllerApp.Services
             mapboxService.DirectionsResponseReceived += OnDirectionsReceived;
 
             locationService.LocationUpdated += OnLocationUpdated;
+            locationService.LocationUpdatedMapsui += OnLocationUpdated;
         }
         
         // Public methods
         public void StartNavigation()
         {
-            if (currentDirectionsResponse != null)
+            if (currentDirectionsResponse != null && templateMap != null && templateMap.Count > 0)
             {
-                fisNavigationService.SetNavigationTemplates(PrepareTemplatesFromDirectionsResponse(currentDirectionsResponse));
+                fisNavigationService.SetNavigationTemplates(templateMap.Values.ToList());
+                currentManeuver = templateMap.Keys.FirstOrDefault()?.Maneuver;
+                fisNavigationService.SetCurrentNavigation(templateMap.First().Value);
+                _ = fisNavigationService.SendNavigationData();
                 NavigationSessionStarted = true;
             }
         }
@@ -57,6 +66,27 @@ namespace ControllerApp.Services
         public void StopNavigation()
         {
             NavigationSessionStarted = false;
+        }
+
+        public void IncrementManeuver()
+        {
+            if (templateMap != null && templateMap.Count > 0)
+            {
+                if (currentManeuver != null)
+                {
+                    var findStep = templateMap.Keys.FirstOrDefault(x => x.Maneuver == currentManeuver);
+                    if (findStep != null)
+                    {
+                        var currentIndex = templateMap.Keys.ToList().IndexOf(findStep);
+                        var nextStep = templateMap.Keys.ElementAt(currentIndex + 1);
+                        if (nextStep != templateMap.Last().Key)
+                        {
+                            currentManeuver = nextStep.Maneuver;
+                            fisNavigationService.SetCurrentNavigation(templateMap[nextStep]);
+                        }
+                    }
+                }
+            }
         }
 
         // Private methods
@@ -67,6 +97,7 @@ namespace ControllerApp.Services
             if (response.Code != null && mapsuiService != null)
             {
                 currentDirectionsResponse = response;
+                templateMap = PrepareLegsTemplatesFromDirectionsResponse(response);
             }
         }
 
@@ -83,7 +114,118 @@ namespace ControllerApp.Services
             }
         }
 
+        private void OnLocationUpdated(object? sender, MPoint location)
+        {
+            if (NavigationSessionStarted)
+            {
+                var totalDistance = CalculateDistanceToFinish(location);
+
+                remainingDistance = CalculateDistaceToNextManeuver(location);
+                if (remainingDistance < 150 && remainingDistance > 0)
+                {
+                    remainingDistance = CalculateStraightLineDistanceToNextManeuver(location);
+                }
+
+                fisNavigationService.SetRemainingDistances(remainingDistance / 1000, totalDistance / 1000);
+
+                if (remainingDistance < 40 && remainingDistance >=0)
+                {
+                    IncrementManeuver();
+                }
+            }
+        }
+
+        // Distance to next point calculation
+        private double CalculateDistaceToNextManeuver(MPoint currentLocation)
+        {
+            // Calculate distance to next maneuver
+            var distances = currentDirectionsResponse?.Routes.FirstOrDefault()?.Legs.FirstOrDefault()?.Annotation?.Distance;
+            // Get the closest point in polyline to the current location
+            var geometryPointIndexCurrentLocation = mapsuiService.GetClosestGeometryPointIndexFromCoordinates(currentLocation);
+
+            if (currentManeuver != null && distances != null && geometryPointIndexCurrentLocation != -1)
+            {
+                var targetPoint = SphericalMercator.FromLonLat(currentManeuver.Location.y, currentManeuver.Location.x).ToMPoint();
+                var geometryPointIndexManeuver = mapsuiService.GetClosestGeometryPointIndexFromCoordinates(targetPoint);
+
+                if (geometryPointIndexManeuver != -1)
+                {
+                    var resultDistance = distances.Skip(geometryPointIndexCurrentLocation).Take(geometryPointIndexManeuver - geometryPointIndexCurrentLocation).Sum();
+
+                    return resultDistance;
+                }
+
+            }
+
+            return -1;
+        }
+
+        private double CalculateStraightLineDistanceToNextManeuver(MPoint currentLocation)
+        {
+            if (currentManeuver != null)
+            {
+                var targetLocationMPoint = SphericalMercator.FromLonLat(currentManeuver.Location.y, currentManeuver.Location.x).ToMPoint();
+
+                return currentLocation.Distance(targetLocationMPoint);
+            }
+
+            return -1;
+        }
+
+        private double CalculateDistanceToFinish(MPoint currentLocation)
+        {
+            var distances = currentDirectionsResponse?.Routes.FirstOrDefault()?.Legs.FirstOrDefault()?.Annotation?.Distance;
+            // Get the closest point in polyline to the current location
+            var geometryPointIndexCurrentLocation = mapsuiService.GetClosestGeometryPointIndexFromCoordinates(currentLocation);
+
+            if (currentManeuver != null && distances != null && geometryPointIndexCurrentLocation != -1)
+            {
+                var targetLocation = templateMap?.Last().Key.Maneuver.Location;
+                if (targetLocation != null)
+                {
+                    var targetPoint = SphericalMercator.FromLonLat(targetLocation.Value.y, targetLocation.Value.x).ToMPoint();
+                    var geometryPointIndexManeuver = mapsuiService.GetClosestGeometryPointIndexFromCoordinates(targetPoint);
+
+                    if (geometryPointIndexManeuver != -1)
+                    {
+                        var resultDistance = distances.Skip(geometryPointIndexCurrentLocation).Sum();
+
+                        return resultDistance;
+                    }
+                }
+
+            }
+
+            return -1;
+        }
+
         // Helper methods
+        private Dictionary<Step, NavigationTemplate> PrepareLegsTemplatesFromDirectionsResponse(DirectionsResponse response)
+        {
+            var templateMap = new Dictionary<Step, NavigationTemplate>();
+            var leg = response.Routes.FirstOrDefault()?.Legs.FirstOrDefault();
+            var steps = leg?.Steps;
+            if (leg != null)
+            {
+                if (steps != null)
+                {
+                    foreach (var step in steps)
+                    {
+                        var template = new NavigationTemplate
+                        {
+                            CurrentAddress = step.Name,
+                            TotalDistance = CalculateRemainingDistance(step, steps) / 1000,
+                            DistanceToNextTurn = (decimal)step.Distance / 1000,
+                            ArrivalTime = TimeOnly.FromDateTime(DateTime.Now.AddSeconds(leg.Duration)),
+                        };
+
+                        templateMap.Add(step, template);
+                    }
+                }
+            }
+            return templateMap;
+        }
+
         private List<NavigationTemplate> PrepareTemplatesFromDirectionsResponse(DirectionsResponse response)
         {
             var template = new List<NavigationTemplate>();
@@ -124,6 +266,16 @@ namespace ControllerApp.Services
             distance = (decimal)remainingSteps.Sum(x => x.Distance);
 
             return distance;
+        }
+
+        private Dictionary<DirectionsResponse, NavigationTemplate> MapDirectionsToTemplates(List<DirectionsResponse> directions)
+        {
+            var templateMap = new Dictionary<DirectionsResponse, NavigationTemplate>();
+            foreach (var direction in directions)
+            {
+                templateMap.Add(direction, new NavigationTemplate());
+            }
+            return templateMap;
         }
     }
 }

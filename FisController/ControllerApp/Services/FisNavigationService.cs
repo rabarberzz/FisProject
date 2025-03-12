@@ -8,6 +8,7 @@ namespace ControllerApp.Services
         private NavigationTemplate currentNavigation;
         private List<NavigationTemplate> navigationTemplateList = new List<NavigationTemplate>();
         private string DataTemplate = "icon_{0}/address_{1}/time_{2}/total_{3}/turn_{4}";
+
         public FisNavigationService(BleService service)
         {
             bleService = service;
@@ -95,6 +96,32 @@ namespace ControllerApp.Services
             }
             currentNavigation = navigationTemplateList[index];
             return currentNavigation;
+        }
+
+        public void SetCurrentNavigation(NavigationTemplate template)
+        {
+            currentNavigation = template;
+            _ = SendNavigationData();
+        }
+
+        public void SetDistanceToManeuver(double distance)
+        {
+
+            currentNavigation.DistanceToNextTurn = (decimal)distance;
+            _ = SendNavigationData();
+        }
+
+        public void SetTotalDistanceLeft(double distance)
+        {
+            currentNavigation.TotalDistance = (decimal)distance;
+            _ = SendNavigationData();
+        }
+
+        public void SetRemainingDistances(double maneuver, double total)
+        {
+            currentNavigation.DistanceToNextTurn = (decimal)maneuver;
+            currentNavigation.TotalDistance = (decimal)total;
+            _ = SendNavigationData();
         }
     }
 }

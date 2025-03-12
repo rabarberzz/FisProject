@@ -22,7 +22,7 @@ public partial class TestWriteBLE : ContentPage
         bleService.SetupConnectedEvent(OnDeviceConnected);
 
         mapboxService = mapbox;
-        mapboxService.DirectionsResponseReceived += DirectionsResponseReceived;
+        //mapboxService.DirectionsResponseReceived += DirectionsResponseReceived;
     }
 
     private async void WriteNaviEntry_Completed(object sender, EventArgs e)

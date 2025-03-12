@@ -58,6 +58,11 @@ public partial class NavigationSetup : ContentPage
         }
     }
 
+    private void NextStep_Clicked(object? sender, EventArgs e)
+    {
+        navigationService.IncrementManeuver();
+    }
+
     private void MapboxService_RetrieveResponseReceived(object? sender, RetrieveResponse e)
     {
         if (e != null && e.Features.Count > 0)

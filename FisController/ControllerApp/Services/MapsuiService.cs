@@ -17,7 +17,7 @@ namespace ControllerApp.Services
     {
         public MapControl MapControl { get; private set; }
         public MyLocationLayer LocationLayer { get; private set; }
-        private Coordinate[]? coordinatesLocal;
+        private Coordinate[]? loadedLinestringCoordinates;
         private DirectionsResponse? directionsResponseLocal;
 
         public MapsuiService()
@@ -57,28 +57,28 @@ namespace ControllerApp.Services
         // gets the closest point coordinates relative to the input point from the loaded geometry linestring path
         public Coordinate? GetClosestGeometryPointFromCoordinates(MPoint locationPoint)
         {
-            if (coordinatesLocal != null && coordinatesLocal.Length > 0)
+            if (loadedLinestringCoordinates != null && loadedLinestringCoordinates.Length > 0)
             {
                 var locationCoordinate = locationPoint.ToCoordinate();
-                var closestPointDistance = coordinatesLocal.Min(c => c.Distance(locationCoordinate));
-                var minIndex = coordinatesLocal
+                var closestPointDistance = loadedLinestringCoordinates.Min(c => c.Distance(locationCoordinate));
+                var minIndex = loadedLinestringCoordinates
                     .Select((c, index) => new { Coordinate = c, Index = index })
                     .First(x => x.Coordinate.Distance(locationCoordinate) == closestPointDistance)
                     .Index;
 
-                return coordinatesLocal[minIndex];
+                return loadedLinestringCoordinates[minIndex];
             }
             return null;
         }
 
         // get the index of the closest point in the geometry linestring path
-        private int GetClosestGeometryPointIndexFromCoordinates(MPoint locationPoint)
+        public int GetClosestGeometryPointIndexFromCoordinates(MPoint locationPoint)
         {
-            if (coordinatesLocal != null && coordinatesLocal.Length > 0)
+            if (loadedLinestringCoordinates != null && loadedLinestringCoordinates.Length > 0)
             {
                 var locationCoordinate = locationPoint.ToCoordinate();
-                var closestPointDistance = coordinatesLocal.Min(c => c.Distance(locationCoordinate));
-                var minIndex = coordinatesLocal
+                var closestPointDistance = loadedLinestringCoordinates.Min(c => c.Distance(locationCoordinate));
+                var minIndex = loadedLinestringCoordinates
                     .Select((c, index) => new { Coordinate = c, Index = index })
                     .First(x => x.Coordinate.Distance(locationCoordinate) == closestPointDistance)
                     .Index;
@@ -89,9 +89,9 @@ namespace ControllerApp.Services
         }
 
         // this successfully calculates the distance and corresponds to the distance annotation in the directions response
-        public void CalculateDistanceBetweenPoints()
+        public void CalculateDistanceBetweenPointsUsing()
         {
-            if (coordinatesLocal != null && coordinatesLocal.Length > 0)
+            if (loadedLinestringCoordinates != null && loadedLinestringCoordinates.Length > 0)
             {
                 var targetIndex = 5;
                 var routes = directionsResponseLocal?.Routes.FirstOrDefault();
@@ -106,7 +106,7 @@ namespace ControllerApp.Services
 
                     MPoint targetCoordinate = SphericalMercator.FromLonLat(target.Value.y, target.Value.x).ToMPoint();
 
-                    if (coordinatesLocal != null && coordinatesLocal.Length > 0)
+                    if (loadedLinestringCoordinates != null && loadedLinestringCoordinates.Length > 0)
                     {
                         var indexOfStart = GetClosestGeometryPointIndexFromCoordinates(startCoordinate);
 
@@ -130,7 +130,7 @@ namespace ControllerApp.Services
         // this calculates the distance between the current location and the next maneuver point straight without following the path
         public void CalculateDistanceStraightToPoint(MPoint locationPoint)
         {
-            if (coordinatesLocal != null && coordinatesLocal.Length > 0)
+            if (loadedLinestringCoordinates != null && loadedLinestringCoordinates.Length > 0)
             {
                 var targetIndex = 0;
                 var routes = directionsResponseLocal?.Routes.FirstOrDefault();
@@ -140,7 +140,7 @@ namespace ControllerApp.Services
                 {
                     MPoint targetCoordinate = SphericalMercator.FromLonLat(target.Value.y, target.Value.x).ToMPoint();
 
-                    if (coordinatesLocal != null && coordinatesLocal.Length > 0)
+                    if (loadedLinestringCoordinates != null && loadedLinestringCoordinates.Length > 0)
                     {
                         var locationCoordinate = locationPoint.ToCoordinate();
                         var distance = locationCoordinate.Distance(targetCoordinate.ToCoordinate());
@@ -153,7 +153,7 @@ namespace ControllerApp.Services
         {
             var coordinates = directions.Routes.FirstOrDefault()?.Geometry;
             var lineString = new LineString(coordinates?.Select(coord => SphericalMercator.FromLonLat(coord.y, coord.x).ToCoordinate()).ToArray());
-            coordinatesLocal = lineString.Coordinates;
+            loadedLinestringCoordinates = lineString.Coordinates;
             return [new GeometryFeature { Geometry = lineString }];
         }
 

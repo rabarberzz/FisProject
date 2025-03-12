@@ -1,9 +1,4 @@
 ﻿using Mapsui;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Timer = System.Timers.Timer;
 
 namespace ControllerApp.Services
@@ -11,6 +6,7 @@ namespace ControllerApp.Services
     public class LocationService
     {
         private Timer locationUpdateTimer;
+
         /// <summary>
         /// Event that is triggered when the location is updated.
         /// <value>
@@ -18,6 +14,7 @@ namespace ControllerApp.Services
         /// </value>
         /// </summary>
         public event EventHandler<MPoint>? LocationUpdatedMapsui;
+
         /// <summary>
         /// Event that is triggered when the location is updated.
         /// <value>
@@ -25,6 +22,7 @@ namespace ControllerApp.Services
         /// </value>
         /// </summary>
         public event EventHandler<Location>? LocationUpdated;
+
         public Location? CurrentLocation { get; private set; }
         public event EventHandler<Exception>? LocationUpdateFailed;
 
