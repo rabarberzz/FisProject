@@ -1,4 +1,5 @@
-﻿using ControllerApp.Resources;
+﻿using ControllerApp.ManeuverHelper;
+using ControllerApp.Resources;
 using Mapbox.Directions;
 using Mapsui;
 using Mapsui.Extensions;
@@ -22,7 +23,6 @@ namespace ControllerApp.Services
 {
     public class NavigationService
     {
-        private BleService bleService;
         private FisNavigationService fisNavigationService;
         private LocationService locationService;
         private MapboxService mapboxService;
@@ -35,10 +35,9 @@ namespace ControllerApp.Services
 
         public bool NavigationSessionStarted { get; private set; } = false;
 
-        public NavigationService(BleService bleSvc, FisNavigationService fisNavSvc, LocationService locSvc,
+        public NavigationService(FisNavigationService fisNavSvc, LocationService locSvc,
             MapboxService mapBoxSvc, MapsuiService mapsuiSvc)
         {
-            bleService = bleSvc;
             fisNavigationService = fisNavSvc;
             locationService = locSvc;
             mapboxService = mapBoxSvc;
@@ -84,6 +83,12 @@ namespace ControllerApp.Services
                             currentManeuver = nextStep.Maneuver;
                             fisNavigationService.SetCurrentNavigation(templateMap[nextStep]);
                         }
+
+                        if (nextStep == templateMap.Last().Key)
+                        {
+                            var lastTemplate = templateMap.Values.Last();
+                            fisNavigationService.SetCurrentNavigation(lastTemplate);
+                        }
                     }
                 }
             }
@@ -121,14 +126,14 @@ namespace ControllerApp.Services
                 var totalDistance = CalculateDistanceToFinish(location);
 
                 remainingDistance = CalculateDistaceToNextManeuver(location);
-                if (remainingDistance < 150 && remainingDistance > 0)
+                if (remainingDistance < 200 && remainingDistance > 0)
                 {
                     remainingDistance = CalculateStraightLineDistanceToNextManeuver(location);
                 }
 
                 fisNavigationService.SetRemainingDistances(remainingDistance / 1000, totalDistance / 1000);
 
-                if (remainingDistance < 40 && remainingDistance >=0)
+                if (remainingDistance < 20 && remainingDistance >=0)
                 {
                     IncrementManeuver();
                 }
@@ -211,12 +216,17 @@ namespace ControllerApp.Services
                 {
                     foreach (var step in steps)
                     {
+                        var maneuverType = step.Maneuver?.Type ?? "";
+                        var maneuverModifier = step.Maneuver?.Modifier ?? "";
+                        var roundaboutExit = step.Maneuver?.Exit.ToString() ?? "";
                         var template = new NavigationTemplate
                         {
                             CurrentAddress = step.Name,
                             TotalDistance = CalculateRemainingDistance(step, steps) / 1000,
                             DistanceToNextTurn = (decimal)step.Distance / 1000,
                             ArrivalTime = TimeOnly.FromDateTime(DateTime.Now.AddSeconds(leg.Duration)),
+                            DirectionsIcon = ManeuverDirectionCodeMap.GetDirectionCode(maneuverType, maneuverModifier) ?? "\x34\x74\x34",
+                            RoundaboutExit = roundaboutExit
                         };
 
                         templateMap.Add(step, template);

@@ -17,7 +17,7 @@
 
         <StackLayout Orientation="Horizontal" Grid.Row="3" HorizontalOptions="FillAndExpand">
             <Button Text="Closest point" HeightRequest="10" Clicked="ClosestPoint_Clicked" BackgroundColor="Gray" Grid.Row="3" HorizontalOptions="FillAndExpand"/>
-            <Button Text="Calculate distance" HeightRequest="10" Clicked="ComparisonButtonClicked" BackgroundColor="Gray" HorizontalOptions="FillAndExpand"/>
+            <Button Text="Increment step" HeightRequest="10" Clicked="ComparisonButtonClicked" BackgroundColor="Gray" HorizontalOptions="FillAndExpand"/>
             <Button Text="Calculate to maneuver" HeightRequest="10" Clicked="CalculateToManeuverClicked" BackgroundColor="Gray" HorizontalOptions="FillAndExpand"/>
         </StackLayout>
     </Grid>

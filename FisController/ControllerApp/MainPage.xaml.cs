@@ -11,8 +11,9 @@ namespace ControllerApp
         private LocationService locationService;
         private MapsuiService mapsuiService;
         private DirectionsResponse? localResponse;
+        private NavigationService navigationService;
 
-        public MainPage(MapboxService mapboxSvc, LocationService locationSvc, MapsuiService mapsuiSvc)
+        public MainPage(MapboxService mapboxSvc, LocationService locationSvc, MapsuiService mapsuiSvc, NavigationService navSvc)
         {
             InitializeComponent();
             mapboxService = mapboxSvc;
@@ -26,6 +27,8 @@ namespace ControllerApp
             mapsuiService = mapsuiSvc;
 
             mapControlElement.Content = mapsuiService.MapControl;
+
+            navigationService = navSvc;
         }
 
         private void OnLocationUpdated(object? sender, MPoint locationPoint)
@@ -82,7 +85,7 @@ namespace ControllerApp
 
         private void ComparisonButtonClicked(object sender, EventArgs e)
         {
-            
+            navigationService.IncrementManeuver();
         }
 
         private void CalculateToManeuverClicked(object sender, EventArgs e)

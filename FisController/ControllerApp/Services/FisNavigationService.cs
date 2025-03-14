@@ -123,5 +123,11 @@ namespace ControllerApp.Services
             currentNavigation.TotalDistance = (decimal)total;
             _ = SendNavigationData();
         }
+
+        // debug method
+        public NavigationTemplate GetCurrentTemplate()
+        {
+            return currentNavigation;
+        }
     }
 }

@@ -56,7 +56,7 @@ public partial class TestWriteBLE : ContentPage
 
     private void CycleDirection_Clicked(object sender, EventArgs e)
     {
-        naviTemplate = fisNavigationService.SetUpNextDirection();
+        naviTemplate = fisNavigationService.GetCurrentTemplate();
         BindingContext = naviTemplate;
     }
 
