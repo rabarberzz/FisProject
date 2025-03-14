@@ -95,11 +95,6 @@ namespace ControllerApp.ManeuverHelper
                 return DirectionsCodes.Straight;
             }
 
-            if (maneuverType == ManeuverTypes.Co)
-            {
-
-            }
-
             if (directionCodeMap.TryGetValue((maneuverType, maneuverModifier), out var directionCode))
             {
                 return directionCode;
