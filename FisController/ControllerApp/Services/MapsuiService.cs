@@ -55,7 +55,7 @@ namespace ControllerApp.Services
         }
 
         // gets the closest point coordinates relative to the input point from the loaded geometry linestring path
-        public Coordinate? GetClosestGeometryPointFromCoordinates(MPoint locationPoint)
+        public MPoint? GetClosestGeometryPointFromCoordinates(MPoint locationPoint)
         {
             if (loadedLinestringCoordinates != null && loadedLinestringCoordinates.Length > 0)
             {
@@ -66,7 +66,7 @@ namespace ControllerApp.Services
                     .First(x => x.Coordinate.Distance(locationCoordinate) == closestPointDistance)
                     .Index;
 
-                return loadedLinestringCoordinates[minIndex];
+                return loadedLinestringCoordinates[minIndex].ToMPoint();
             }
             return null;
         }

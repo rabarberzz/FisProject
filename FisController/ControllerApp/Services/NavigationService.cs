@@ -32,6 +32,9 @@ namespace ControllerApp.Services
         private Dictionary<Step, NavigationTemplate>? templateMap;
         private Maneuver? currentManeuver;
         private double remainingDistance;
+        private double previousRemainingDistance;
+        private double previousTotalDistance;
+        private bool followingRoute = true;
 
         public bool NavigationSessionStarted { get; private set; } = false;
 
@@ -50,16 +53,17 @@ namespace ControllerApp.Services
         }
         
         // Public methods
-        public void StartNavigation()
+        public bool StartNavigation()
         {
             if (currentDirectionsResponse != null && templateMap != null && templateMap.Count > 0)
             {
                 fisNavigationService.SetNavigationTemplates(templateMap.Values.ToList());
                 currentManeuver = templateMap.Keys.FirstOrDefault()?.Maneuver;
                 fisNavigationService.SetCurrentNavigation(templateMap.First().Value);
-                _ = fisNavigationService.SendNavigationData();
                 NavigationSessionStarted = true;
+                return true;
             }
+            return false;
         }
 
         public void StopNavigation()
@@ -121,15 +125,36 @@ namespace ControllerApp.Services
 
         private void OnLocationUpdated(object? sender, MPoint location)
         {
-            if (NavigationSessionStarted)
+            if (NavigationSessionStarted && currentManeuver != null && templateMap != null)
             {
-                var totalDistance = CalculateDistanceToFinish(location);
+                var currentStep = templateMap.Keys.First(x => x.Maneuver == currentManeuver);
+                if (!CheckIfUserIsFollowingRoute(location))
+                {
+                    followingRoute = CheckIfUserIsFollowingRoute(location);
+                    return;
+                }
+                else if (followingRoute == false 
+                    && fisNavigationService.GetCurrentTemplate() != templateMap[currentStep])
+                {
+                    currentStep = templateMap.Keys.First(x => x.Maneuver == currentManeuver);
+                    fisNavigationService.SetCurrentNavigation(templateMap[currentStep]);
+                    followingRoute = CheckIfUserIsFollowingRoute(location);
+                    return;
+                }
 
-                remainingDistance = CalculateDistaceToNextManeuver(location);
-                if (remainingDistance < 200 && remainingDistance > 0)
+                if (currentManeuver != templateMap.First().Key.Maneuver)
+                {
+                    remainingDistance = CalculateDistaceToNextManeuver(location);
+                }
+
+                if (remainingDistance < 200 && remainingDistance > 0 || currentManeuver == templateMap.First().Key.Maneuver)
                 {
                     remainingDistance = CalculateStraightLineDistanceToNextManeuver(location);
                 }
+
+                var totalDistance = CalculateDistanceToFinish(location);
+
+                HandleRemainingDistancesNumberCountChange(remainingDistance / 1000, totalDistance / 1000);
 
                 fisNavigationService.SetRemainingDistances(remainingDistance / 1000, totalDistance / 1000);
 
@@ -137,7 +162,45 @@ namespace ControllerApp.Services
                 {
                     IncrementManeuver();
                 }
+
+                previousRemainingDistance = remainingDistance / 1000;
+                previousTotalDistance = totalDistance / 1000;
             }
+        }
+
+        private void HandleRemainingDistancesNumberCountChange(double remainingDistance, double remainingTotalDistance)
+        {
+            if ((remainingDistance < 100 && previousRemainingDistance >= 100 && previousRemainingDistance != remainingDistance)
+                    || (remainingTotalDistance < 100 && previousTotalDistance >= 100 && remainingTotalDistance != previousTotalDistance))
+            {
+                fisNavigationService.ClearNaviScreen();
+            }
+
+            if ((remainingDistance < 10 && previousRemainingDistance >= 10 && previousRemainingDistance != remainingDistance)
+                && (remainingTotalDistance < 10 && previousTotalDistance >= 10 && remainingTotalDistance != previousTotalDistance))
+            {
+                fisNavigationService.ClearNaviScreen();
+            }
+        }
+
+        private bool CheckIfUserIsFollowingRoute(MPoint currentLocation)
+        {
+            var closestPoint = mapsuiService.GetClosestGeometryPointFromCoordinates(currentLocation);
+            if (closestPoint != null)
+            {
+                var distance = currentLocation.Distance(closestPoint);
+                if (distance > 200)
+                {
+                    var offRouteTemplate = new NavigationTemplate()
+                    {
+                        CurrentAddress = "Off route",
+                        DirectionsIcon = DirectionsCodes.LeftTurnaround,
+                    };
+                    fisNavigationService.SetCurrentNavigation(offRouteTemplate);
+                    return false;
+                }
+            }
+            return true;
         }
 
         // Distance to next point calculation

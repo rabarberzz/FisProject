@@ -48,8 +48,11 @@ public partial class NavigationSetup : ContentPage
     {
         if (!navigationService.NavigationSessionStarted)
         {
-            navigationService.StartNavigation();
-            NavigationSessionButton.Text = "End Navigation";
+            var result = navigationService.StartNavigation();
+            if (result)
+            {
+                NavigationSessionButton.Text = "End Navigation";
+            }
         }
         else
         {
@@ -77,6 +80,18 @@ public partial class NavigationSetup : ContentPage
                 && selectedDestinationSuggestion.MapboxId == e.Features.FirstOrDefault()?.Properties.MapboxId)
             {
                 retrieveResponseDestination = e;
+            }
+
+            if (RadioMyLocation.IsChecked && retrieveResponseDestination != null &&
+                locationService.CurrentLocation is Location currentLocation)
+            {
+                Vector2d origin = new(currentLocation.Latitude, currentLocation.Longitude);
+
+                var destinationFeature = retrieveResponseDestination.Features.First();
+                Vector2d destination = new(destinationFeature.Geometry.Coordinates[1], destinationFeature.Geometry.Coordinates[0]);
+
+                mapboxService.GetDirections(origin, destination);
+                return;
             }
 
             if (retrieveResponseOrigin != null && retrieveResponseDestination != null)
@@ -136,6 +151,21 @@ public partial class NavigationSetup : ContentPage
                 selectedDestinationSuggestion = suggestionObject;
             }
             mapboxService.GetSuggestionRetrieve(suggestionObject);
+        }
+    }
+
+    private void RadioButton_CheckedChanged(object sender, CheckedChangedEventArgs e)
+    {
+        if (sender == RadioMyLocation && e.Value)
+        {
+            OriginSearchBar.IsVisible = false;
+            OriginResultView.IsVisible = false;
+        }
+
+        if (sender == RadioInputLocation && e.Value)
+        {
+            OriginSearchBar.IsVisible = true;
+            OriginResultView.IsVisible = true;
         }
     }
 }

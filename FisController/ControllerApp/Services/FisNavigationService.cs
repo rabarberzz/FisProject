@@ -100,13 +100,13 @@ namespace ControllerApp.Services
 
         public void SetCurrentNavigation(NavigationTemplate template)
         {
+            ClearNaviScreen();
             currentNavigation = template;
             _ = SendNavigationData();
         }
 
         public void SetDistanceToManeuver(double distance)
         {
-
             currentNavigation.DistanceToNextTurn = (decimal)distance;
             _ = SendNavigationData();
         }
@@ -122,6 +122,11 @@ namespace ControllerApp.Services
             currentNavigation.DistanceToNextTurn = (decimal)maneuver;
             currentNavigation.TotalDistance = (decimal)total;
             _ = SendNavigationData();
+        }
+
+        public async void ClearNaviScreen()
+        {
+            await bleService.SendNaviClearCommand();
         }
 
         // debug method

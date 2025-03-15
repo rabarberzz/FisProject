@@ -95,6 +95,7 @@ namespace ControllerApp.Services
                 searchboxResource.MapboxId = suggestion.MapboxId;
 
                 retrieve.Query(searchboxResource, OnRetrieveResponseReceived);
+                searchboxSessionToken = null;
             }
         }
 

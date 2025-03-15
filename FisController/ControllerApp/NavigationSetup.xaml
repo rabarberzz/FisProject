@@ -24,7 +24,9 @@
         <Label 
             Text="Navigation setup page"
             VerticalOptions="Center" 
-            HorizontalOptions="Center" />
+            HorizontalOptions="Center" Padding="10"/>
+        <RadioButton x:Name="RadioMyLocation" Content="Use my location as starting point" CheckedChanged="RadioButton_CheckedChanged"/>
+        <RadioButton x:Name="RadioInputLocation" Content="Input starting point manually" CheckedChanged="RadioButton_CheckedChanged" IsChecked="True"/>
         <SearchBar x:Name="OriginSearchBar" Placeholder="Start point" TextChanged="SearchBar_TextChanged"/>
         <ListView x:Name="OriginResultView" ItemTemplate="{StaticResource SuggestionItemTemplate}" ItemSelected="ListViewAddress_Selected" MaximumHeightRequest="200"/>
         <SearchBar x:Name="DestinationSearchBar" Placeholder="Destination point" TextChanged="SearchBar_TextChanged"/>

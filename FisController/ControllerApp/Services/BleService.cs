@@ -202,6 +202,15 @@ namespace ControllerApp.Services
             }
         }
 
+        public async Task SendNaviClearCommand()
+        {
+            if (naviCharacteristic != null)
+            {
+                var encodedText = Encoding.UTF8.GetBytes("clear");
+                await naviCharacteristic.WriteAsync(encodedText);
+            }
+        }
+
         public void SetupConnectedEvent(EventHandler<DeviceEventArgs> eventHandler)
         {
             adapter.DeviceConnected += eventHandler;

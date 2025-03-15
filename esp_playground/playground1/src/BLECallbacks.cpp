@@ -51,6 +51,12 @@ void MyBLEServerCallbacks::onDisconnect(BLEServer* pServer) {
 }
 
 void writeNaviTextInWorkspace(const std::string& value, TLBFISLib& fis) {
+    if (value == "clear")
+    {
+        fis.clear();
+        return;
+    }
+    
     std::string icon, address, time, total, turn;
     parseIncomingNaviData(value, icon, address, time, total, turn);
 
@@ -65,23 +71,27 @@ void writeNaviTextInWorkspace(const std::string& value, TLBFISLib& fis) {
     Serial.println("Turn: ");
     Serial.print(turn.c_str());
 
-    fis.setWorkspace(0, 24, 64, 55, true);
-    fis.drawRect(0, 0, 64, 55, TLBFISLib::NOT_FILLED);
+
+    fis.setWorkspace(0, 24, 64, 55);
+    //fis.drawRect(0, 0, 64, 55, TLBFISLib::NOT_FILLED);
+    fis.drawLine(0, 0, 64);
     fis.setFont(TLBFISLib::COMPACT);
     fis.setLineSpacing(1);
 
     fis.setTextAlignment(TLBFISLib::LEFT);
-    fis.writeText(2, 2, time.c_str());
-    fis.writeMultiLineText(2, 10, total.c_str());
+    fis.writeText(0, 2, time.c_str());
+    fis.writeMultiLineText(0, 10, total.c_str());
 
     fis.setTextAlignment(TLBFISLib::RIGHT);
-    fis.writeMultiLineText(-1, 2, turn.c_str());
+    fis.writeMultiLineText(0, 2, turn.c_str());
 
     fis.setTextAlignment(TLBFISLib::CENTER);
     fis.writeText(0, 46, address.c_str());
 
     fis.setFont(TLBFISLib::GRAPHICS);
     fis.writeMultiLineText(0, 10, icon.c_str());
+
+    fis.drawLine(0, 55, 64);
 
     fis.resetWorkspace();
 }
@@ -104,7 +114,9 @@ std::vector<std::string> splitIncomingNaviData(const std::string& s, char delimi
     return tokens;
 }
 
-void parseIncomingNaviData(const std::string& data, std::string& icon, std::string& address, std::string& time, std::string& total, std::string& turn) {
+void parseIncomingNaviData(const std::string& data, std::string& icon, 
+    std::string& address, std::string& time, std::string& total, 
+    std::string& turn) {
     std::vector<std::string> tokens = splitIncomingNaviData(data, '/');
     Serial.println(tokens.size());
     if (tokens.size() == 5) {
