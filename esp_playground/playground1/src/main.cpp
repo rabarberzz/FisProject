@@ -71,12 +71,14 @@ void setup()
   Serial.printf("The device with name \"%s\" is started.\nNow you can pair it with Bluetooth!\n", DeviceName.c_str());
 
   //Start the library and initialize the screen.
+  Serial.printf("Trying FIS begin");
   FIS.begin();
   FIS.initScreen(SCREEN_SIZE);
+  Serial.printf("After FIS initScreen");
 
-  //drawRuler();
+  drawRuler();
   //drawTestLayout();
-  drawNavigation();
+  //drawNavigation();
 
   /* //Set font options, which will persist for every subsequent text command.
   FIS.setFont(TLBFISLib::COMPACT);

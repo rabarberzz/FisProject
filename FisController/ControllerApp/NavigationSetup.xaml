@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:ControllerApp.Converters"
              x:Class="ControllerApp.NavigationSetup"
-             Title="NavigationSetup">
+             Title="Navigation Setup">
 
     <ContentPage.Resources>
         <ResourceDictionary>
@@ -24,7 +24,7 @@
         <Label 
             Text="Navigation setup page"
             VerticalOptions="Center" 
-            HorizontalOptions="Center" Padding="10"/>
+            HorizontalOptions="Center" Padding="10" IsVisible="False"/>
         <RadioButton x:Name="RadioMyLocation" Content="Use my location as starting point" CheckedChanged="RadioButton_CheckedChanged"/>
         <RadioButton x:Name="RadioInputLocation" Content="Input starting point manually" CheckedChanged="RadioButton_CheckedChanged" IsChecked="True"/>
         <SearchBar x:Name="OriginSearchBar" Placeholder="Start point" TextChanged="SearchBar_TextChanged"/>
@@ -32,6 +32,6 @@
         <SearchBar x:Name="DestinationSearchBar" Placeholder="Destination point" TextChanged="SearchBar_TextChanged"/>
         <ListView x:Name="DestinationResultView" ItemTemplate="{StaticResource SuggestionItemTemplate}" ItemSelected="ListViewAddress_Selected" MaximumHeightRequest="200"/>
         <Button x:Name="NavigationSessionButton" Text="Start navigation" Clicked="StartNavigation_Clicked"/>
-        <Button Text="Increment step" Clicked="NextStep_Clicked"/>
+        <Button Text="Increment step" Clicked="NextStep_Clicked" IsVisible="False"/>
     </VerticalStackLayout>
 </ContentPage>

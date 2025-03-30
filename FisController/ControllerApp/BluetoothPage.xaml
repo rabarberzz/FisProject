@@ -3,17 +3,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:ControllerApp.ViewModels"
              x:Class="ControllerApp.BluetoothPage"
-             Title="BluetoothPage">
+             Title="Bluetooth Page">
 
     <ContentPage.BindingContext>
         <vm:DevicesViewModel />
     </ContentPage.BindingContext>
-    
+
     <VerticalStackLayout>
-        <Label 
-            Text="Bluetooth page"
-            VerticalOptions="Center" 
-            HorizontalOptions="Center" />
         <Label
             x:Name="BleStatusLabel"
             Text="BLE Status"

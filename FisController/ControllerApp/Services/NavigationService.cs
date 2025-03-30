@@ -110,11 +110,7 @@ namespace ControllerApp.Services
             }
         }
 
-        // On every location update check if the user is close to the next maneuver
-        // also check if the user is still on the route.
-        // Also update the remaining distances on every location update.
-        // Need to handle next maneuver switch over.
-        // Dont forget to handle the sending of data to FIS device.
+        
         private void OnLocationUpdated(object? sender, Location location)
         {
             if (NavigationSessionStarted)
@@ -123,6 +119,11 @@ namespace ControllerApp.Services
             }
         }
 
+        // On every location update check if the user is close to the next maneuver
+        // also check if the user is still on the route.
+        // Also update the remaining distances on every location update.
+        // Need to handle next maneuver switch over.
+        // Dont forget to handle the sending of data to FIS device.
         private void OnLocationUpdated(object? sender, MPoint location)
         {
             if (NavigationSessionStarted && currentManeuver != null && templateMap != null)
@@ -189,6 +190,7 @@ namespace ControllerApp.Services
             if (closestPoint != null)
             {
                 var distance = currentLocation.Distance(closestPoint);
+                // I think this should be more than 200, try 300 maybe
                 if (distance > 200)
                 {
                     var offRouteTemplate = new NavigationTemplate()

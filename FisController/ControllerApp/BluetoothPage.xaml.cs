@@ -1,3 +1,4 @@
+using ControllerApp.Resources;
 using ControllerApp.Services;
 using ControllerApp.ViewModels;
 using Plugin.BLE.Abstractions.EventArgs;
@@ -7,13 +8,15 @@ namespace ControllerApp
     public partial class BluetoothPage : ContentPage
     {
         private readonly BleService bleService;
+        private readonly FisNavigationService fisSvc;
 
-        public BluetoothPage(BleService bleService, DevicesViewModel devicesViewModel)
+        public BluetoothPage(BleService bleService, DevicesViewModel devicesViewModel, FisNavigationService fisSvc)
         {
             InitializeComponent();
             this.bleService = bleService;
             Initialize();
             BindingContext = devicesViewModel;
+            this.fisSvc = fisSvc;
 
             devicesViewModel.DeviceConnectionChanged += OnDeviceConnectionChanged;
         }
@@ -34,6 +37,26 @@ namespace ControllerApp
         private async void OnTest_Clicked(object sender, EventArgs e)
         {
             await bleService.TestConnection();
+            TestNavigationIcons();
+        }
+
+        private void TestNavigationIcons()
+        {
+            var iconsList = DirectionsCodes.GetDirectionsCodes();
+            foreach (var icon in iconsList)
+            {
+                var template = new NavigationTemplate()
+                {
+                    ArrivalTime = new TimeOnly(00, 00),
+                    DistanceToNextTurn = 0,
+                    TotalDistance = 0,
+                    DirectionsIcon = icon.Value
+                };
+                
+                fisSvc.SetCurrentNavigation(template);
+
+                Thread.Sleep(2000);
+            }
         }
 
         private void OnDeviceConnectionChanged(object? sender, DeviceEventArgs args)
