@@ -7,7 +7,7 @@ namespace ControllerApp.Services
         private BleService bleService;
         private NavigationTemplate currentNavigation;
         private List<NavigationTemplate> navigationTemplateList = new List<NavigationTemplate>();
-        private string DataTemplate = "icon_{0}/address_{1}/time_{2}/total_{3}/turn_{4}";
+        private static string DataTemplate = "icon_{0}/address_{1}/time_{2}/total_{3}/turn_{4}/exit_{5}/clear_{6}";
 
         public FisNavigationService(BleService service)
         {
@@ -67,10 +67,39 @@ namespace ControllerApp.Services
                 currentNavigation.CurrentAddress,
                 currentNavigation.GetArrivalTimeString,
                 currentNavigation.GetTotalDistanceString,
-                currentNavigation.GetDistanceToNextTurnString
+                currentNavigation.GetDistanceToNextTurnString,
+                currentNavigation.RoundaboutExit,
+                currentNavigation.ClearScreen
                 );
 
             return data;
+        }
+
+        private void HandleDistanceChange(decimal remainingDistance, decimal newRemainingDistance)
+        {
+            //if ((remainingDistance < 100 && previousRemainingDistance >= 100 && previousRemainingDistance != remainingDistance)
+            //        || (remainingTotalDistance < 100 && previousTotalDistance >= 100 && remainingTotalDistance != previousTotalDistance))
+            //{
+            //    fisNavigationService.ClearNaviScreen();
+            //}
+
+            //if ((remainingDistance < 10 && previousRemainingDistance >= 10 && previousRemainingDistance != remainingDistance)
+            //    && (remainingTotalDistance < 10 && previousTotalDistance >= 10 && remainingTotalDistance != previousTotalDistance))
+            //{
+            //    fisNavigationService.ClearNaviScreen();
+            //}
+            currentNavigation.ClearScreen = "false";
+
+            if (remainingDistance >= 100 && newRemainingDistance < 100 && remainingDistance != newRemainingDistance)
+            {
+                currentNavigation.ClearScreen = "true";
+            }
+
+            if (remainingDistance > 10 && newRemainingDistance <= 10 && remainingDistance != newRemainingDistance)
+            {
+                currentNavigation.ClearScreen = "true";
+            }
+
         }
 
         public void SetNavigationTemplates(List<NavigationTemplate> templates)
@@ -119,8 +148,12 @@ namespace ControllerApp.Services
 
         public void SetRemainingDistances(double maneuver, double total)
         {
+            HandleDistanceChange(currentNavigation.DistanceToNextTurn, (decimal)maneuver);
             currentNavigation.DistanceToNextTurn = (decimal)maneuver;
+
+            HandleDistanceChange(currentNavigation.TotalDistance, (decimal)total);
             currentNavigation.TotalDistance = (decimal)total;
+
             _ = SendNavigationData();
         }
 

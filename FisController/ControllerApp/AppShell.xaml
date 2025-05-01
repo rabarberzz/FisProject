@@ -22,5 +22,5 @@
     <ShellContent
         Title="BLE Write"
         ContentTemplate="{DataTemplate local:TestWriteBLE}"
-        Route="TestWriteBLE" />
+        Route="TestWriteBLE" IsVisible="False"/>
 </Shell>

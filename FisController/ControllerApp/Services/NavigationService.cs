@@ -155,7 +155,7 @@ namespace ControllerApp.Services
 
                 var totalDistance = CalculateDistanceToFinish(location);
 
-                HandleRemainingDistancesNumberCountChange(remainingDistance / 1000, totalDistance / 1000);
+                //HandleRemainingDistancesNumberCountChange(remainingDistance / 1000, totalDistance / 1000);
 
                 fisNavigationService.SetRemainingDistances(remainingDistance / 1000, totalDistance / 1000);
 
@@ -191,7 +191,7 @@ namespace ControllerApp.Services
             {
                 var distance = currentLocation.Distance(closestPoint);
                 // I think this should be more than 200, try 300 maybe
-                if (distance > 200)
+                if (distance > 300)
                 {
                     var offRouteTemplate = new NavigationTemplate()
                     {

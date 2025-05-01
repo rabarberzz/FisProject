@@ -6,46 +6,39 @@
 #include <BLEUtils.h>
 #include <BLEServer.h>
 #include <BLECallbacks.h>
+#include <FISDrawings.h>
+#include <hw_timer.h>
 
 // ==== global definitions ====
 #define SPI_INSTANCE SPI
 #define ENA_PIN 4
-#define SCREEN_SIZE TLBFISLib::FULLSCREEN
+#define SCREEN_SIZE TLBFISLib::HALFSCREEN
 #define LED_BUILTIN 2 // Define the built-in LED pin for ESP32
+#define PULSE_PIN 21 // Pin where the pulses will be sent
+#define PCNT_UNIT PCNT_UNIT_0 // Use PCNT unit 0
 
 // ==== put function declarations here ====
 void sendFunction(uint8_t data);
 void beginFunction();
 void errorHandler(unsigned long _);
-void drawScreen();
-void drawNavigation();
-void drawRuler();
-void drawTestLayout();
+//void drawSpeedFromPulses(int16_t pulses); // Function to draw speed from pulse count
+void initBLE();
 
 // ==== definitions ====
-BluetoothSerial SerialBT;
-char BtInputText[20];
 // = BLE =
 static BLEUUID serviceUUID("f15aaf00-fc20-47c7-a574-9411948aed62"); // device/service UUID
 static BLEUUID charUUID("f15aaf01-fc20-47c7-a574-9411948aed62"); // text characteristic UUID
 static BLEUUID naviUUID("f15aaf02-fc20-47c7-a574-9411948aed62"); // navigation characteristic UUID
+static BLEUUID configUUID("f15aaf03-fc20-47c7-a574-9411948aed62"); // configuration characteristic UUID
+const String DeviceName = "ESP32-BT-Server";
+bool connected = false;
+bool navi_enabled = true; // Flag to indicate if navigation is enabled
+bool speed_enabled = true;
+
 
 // ==== inits ====
-const String DeviceName = "ESP32-BT-Server";
 TLBFISLib FIS(ENA_PIN, sendFunction, beginFunction);
-bool sendEntryString = false; // dont forget this
-String receivedData = "";
-char roundabout[] =   // \x11\x12\x13\x7A\x1D\x1E\x1F\x20\x21\x7A\x2A\x2B\x2C\x2D\x2E\x7A\x39\x3A\x3B\x7A\x41
-              "\x11\x12\x13" GRAPHICS_NEWLINE 
-          "\x1D\x1E\x1F\x20\x21" GRAPHICS_NEWLINE
-          "\x2A\x2B\x2C\x2D\x2E" GRAPHICS_NEWLINE
-              "\x39\x3A\x3B" GRAPHICS_NEWLINE
-                  "\x41";
-char leftTurn[] = // \x30\x33\x33\x7A\x3E\x41\x3A\x7A\x74\x74\x3A
-      "\x30\x33\x33" GRAPHICS_NEWLINE
-      "\x3E\x41\x3A" GRAPHICS_NEWLINE
-      "\x74\x74\x3A";
-bool connected = false;
+FISDrawings FISDraw(FIS); // Create an instance of the FISDrawings class
 
 // ==== check bt availability ====
 #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
@@ -59,40 +52,100 @@ bool connected = false;
 
 void setup()
 {
-  // setup led pin mode
-  pinMode(LED_BUILTIN, OUTPUT);
-
   // setup serial
   Serial.begin(115200);
 
-  // setup bt serial
-  SerialBT.begin(DeviceName);
-  //SerialBT.deleteAllBondedDevices(); // Uncomment this to delete paired devices; Must be called after begin
-  Serial.printf("The device with name \"%s\" is started.\nNow you can pair it with Bluetooth!\n", DeviceName.c_str());
+  // setup led pin mode
+  pinMode(LED_BUILTIN, OUTPUT);
 
-  //Start the library and initialize the screen.
-  Serial.printf("Trying FIS begin");
+  // setup pulse pin mode
+  pinMode(PULSE_PIN, INPUT);
+
+  //Start TLBFISLib and initialize the screen.
   FIS.begin();
-  FIS.initScreen(SCREEN_SIZE);
-  Serial.printf("After FIS initScreen");
+  //FIS.initScreen(SCREEN_SIZE);
+  //FIS.clear();
+  //FIS.writeRadioText(0, "TEST");
+  //FIS.errorFunction(errorHandler); // fis disruption handler handle
+  FIS.setTextAlignment(TLBFISLib::CENTER);
+  FIS.setFont(TLBFISLib::COMPACT);
+  FIS.clearRadioText(); // Clear the radio text area (turns off that section)
+  Serial.println("TLBFISLib initialized.");
 
-  drawRuler();
+  // test drawings
+  //FISDraw.drawRuler();
   //drawTestLayout();
   //drawNavigation();
+  //FISDraw.drawNavigation2();
 
-  /* //Set font options, which will persist for every subsequent text command.
-  FIS.setFont(TLBFISLib::COMPACT);
-  FIS.setTextAlignment(TLBFISLib::CENTER);
-  FIS.setLineSpacing(3);
+  pcnt_init_and_start(); // Initialize and start the pulse counter
 
-  //Write the message at position X0, Y1.
-  FIS.writeText(0, 0, "READY");
+  init_hw_timer(); // Initialize the hardware timer
 
-  FIS.setFont(TLBFISLib::GRAPHICS);
-  FIS.writeMultiLineText(0, 25, roundabout);
-  FIS.setFont(TLBFISLib::COMPACT); */
+  initBLE(); // Initialize BLE service
+}
 
-  // init ble
+void loop()
+{
+  // ble stuff
+  if (connected)
+  {
+    // set led on when client connected
+    digitalWrite(LED_BUILTIN, HIGH);
+  }
+  else
+  {
+    // set led off when client disconnected
+    digitalWrite(LED_BUILTIN, LOW);
+  }
+
+  // counting works now :)
+  /*int16_t count;
+  pcnt_init_and_start();
+  delay(1000);
+  unsigned long lastMillis = 0;
+  
+  pcnt_get(&count);
+
+  if (count > 0){
+    Serial.printf("Pulses: %d\n", count);
+    drawSpeedFromPulses(count, true);
+  }
+  pcnt_clear();
+  if (millis() - lastMillis >= 1000) {
+    lastMillis = millis();
+  }*/
+  
+  //Maintain the FIS connection.
+  FIS.update();
+}
+
+// ==== functions ====
+//Define the function to be called when the library needs to send a byte.
+void sendFunction(uint8_t data)
+{
+  SPI_INSTANCE.beginTransaction(SPISettings(125000, MSBFIRST, SPI_MODE3));
+  SPI_INSTANCE.transfer(data);
+  SPI_INSTANCE.endTransaction();
+}
+
+//Define the function to be called when the library is initialized by begin().
+void beginFunction()
+{
+  SPI_INSTANCE.begin();
+}
+
+void errorHandler(unsigned long _)
+{
+  (void) _;
+  FIS.initScreen(SCREEN_SIZE);
+  FIS.writeMultiLineText(0, 0, "SCREEN GOT\nDISRUPTED");
+  Serial.println("FIS error handler called.");
+}
+
+void initBLE()
+{
+  // setup ble
   Serial.println("Starting BLE service");
   BLEDevice::init(DeviceName.c_str());
   BLEServer *pServer = BLEDevice::createServer();
@@ -115,7 +168,15 @@ void setup()
     BLECharacteristic::PROPERTY_WRITE |
     BLECharacteristic::PROPERTY_NOTIFY
   );
-  naviCharacteristic->setCallbacks(new NaviCharacteristicCallbacks(FIS)); // Register the navigation callback
+  naviCharacteristic->setCallbacks(new NaviCharacteristicCallbacks(FIS, navi_enabled)); // Register the navigation callback
+
+  BLECharacteristic *configCharacteristic = pService->createCharacteristic(
+    configUUID,
+    BLECharacteristic::PROPERTY_READ |
+    BLECharacteristic::PROPERTY_WRITE |
+    BLECharacteristic::PROPERTY_NOTIFY
+  );
+  configCharacteristic->setCallbacks(new ConfigCharacteristicCallbacks()); // Register the config callback
 
   pService->start();
 
@@ -125,152 +186,14 @@ void setup()
   pAdvertising->setMinPreferred(0x06);  // functions that help with iPhone connections issue
   pAdvertising->setMinPreferred(0x12);
   BLEDevice::startAdvertising();
+
+  Serial.println("BLE service started and advertising.");
 }
 
-void loop()
+void drawSpeedFromPulses(int16_t pulses)
 {
-  // ble stuff
-  if (connected)
-  {
-    // set led on when client connected
-    digitalWrite(LED_BUILTIN, HIGH);
-  }
-  else
-  {
-    // set led off when client disconnected
-    digitalWrite(LED_BUILTIN, LOW);
-    delay(500);
-  }
-
-  // fis disruption handler handle
-  //FIS.errorFunction(errorHandler);
-  
-  // check if serial bt client has sent something
-  //while (SerialBT.available())
-  while (false)
-  {
-    char incomingChar = SerialBT.read();
-
-    if (incomingChar == '\n' || incomingChar == '\r')
-    {
-      // write new line
-      SerialBT.write('\n');
-
-      // convert to uppercase
-      //receivedData.toUpperCase();
-      receivedData.toCharArray(BtInputText, sizeof(BtInputText));
-      SerialBT.println("Tried to write: " + receivedData);
-
-      FIS.clear(); // clear screen before writing, otherwise it overwrites
-      FIS.writeMultiLineText(0, 1, BtInputText); // write to fis
-
-      receivedData = ""; // clear buffer
-      sendEntryString = true; // allow entry string
-    }
-    else
-    {
-      receivedData += incomingChar;
-      Serial.write(incomingChar);
-      SerialBT.write(incomingChar);
-    }
-  }
-
-  //Maintain the connection.
-  FIS.update();
-}
-
-// ==== functions ====
-//Define the function to be called when the library needs to send a byte.
-void sendFunction(uint8_t data)
-{
-  SPI_INSTANCE.beginTransaction(SPISettings(125000, MSBFIRST, SPI_MODE3));
-  SPI_INSTANCE.transfer(data);
-  SPI_INSTANCE.endTransaction();
-}
-
-//Define the function to be called when the library is initialized by begin().
-void beginFunction()
-{
-  SPI_INSTANCE.begin();
-}
-
-void errorHandler(unsigned long _)
-{
-  (void) _;
-
-  FIS.initScreen(SCREEN_SIZE);
-  FIS.writeMultiLineText(0, 0, "SCREEN GOT\nDISRUPTED");
-}
-
-void drawScreen()
-{
-  //Write a message at position X0, Y1.
-  FIS.writeText(0, 1, "FIRST LINE");
-
-  //Claim a rectangle at position X5, Y10 with width = 9 and height = 9.
-  FIS.setWorkspace(5, 10, 9, 9);
-
-  //Clear the claimed area with the primary color, filling in the rectangle.
-  FIS.clear(TLBFISLib::INVERTED);
-  
-  //You can also set a workspace and clear it in the same instruction like: FIS.setWorkspace(5, 10, 9, 9, true, TLBFISLib::INVERTED);
-
-  //Write a smiley face in that area (on position X2, Y1, where the coordinates start from the top-left corner of the claimed area, not of the screen),
-  //setting the text color to TLBFISLib::INVERTED to make it visible, then back to TLBFISLib::NORMAL for the next commands.
-  FIS.setDrawColor(TLBFISLib::INVERTED);
-  FIS.writeText(2, 1, ":)");
-  FIS.setDrawColor(TLBFISLib::NORMAL);
-
-  //Reclaim the entire screen and write a message at position X0, Y41.
-  FIS.resetWorkspace();
-  FIS.writeText(0, 41, "LAST LINE");
-
-  //Claim only the right side of the screen and write a message there at position X0, Y0.
-  //You will notice the message starts from the middle of the screen, as that is the origin X coordinate.
-  FIS.setWorkspace(32, 0, 32, 48);
-  FIS.writeText(0, 14, "OFFSET");
-
-  //Claim an area and write a message inside of it.
-  //You will notice that the text is cut off vertically and horizontally, because
-  //1. the height of characters is 7 pixels, and in the workspace only 6 pixels are claimed vertically
-  //2. the width of this string is longer than 42 pixels, but only 42 are claimed horizontally
-  FIS.setWorkspace(16, 30, 42, 6);
-  FIS.writeText(0, 0, "SMALL AREA");
-}
-
-void drawNavigation()
-{
-  FIS.clear();
-  FIS.setFont(TLBFISLib::COMPACT);
-  FIS.setLineSpacing(1);
-  FIS.drawLine(0, 24, 64);
-  FIS.setTextAlignment(TLBFISLib::LEFT);
-  FIS.writeText(0, 26, "17:29");
-  FIS.writeMultiLineText(0, 34, "78\nKM");
-  FIS.setTextAlignment(TLBFISLib::RIGHT);
-  FIS.writeMultiLineText(0, 26, "0.7\nKM");
-  FIS.setTextAlignment(TLBFISLib::CENTER);
-  FIS.writeText(0, 68, "SALDUS 3B");
-  FIS.drawLine(0, 24, 74);
-  FIS.setFont(TLBFISLib::GRAPHICS);
-  FIS.writeMultiLineText(0, 34, leftTurn);
-}
-
-void drawRuler()
-{
-  FIS.clear();
-  FIS.setFont(TLBFISLib::COMPACT);
-  FIS.setLineSpacing(1);
-  FIS.setTextAlignment(TLBFISLib::LEFT);
-  FIS.writeMultiLineText(0, 0, "0\n8\n16\n24\n32\n40\n48\n56\n64\n72\n80\n88");
-}
-
-void drawTestLayout()
-{
-  FIS.clear();
-  FIS.setWorkspace(0, 24, 64, 55);
-  FIS.drawRect(0, 0, 64, 55, TLBFISLib::NOT_FILLED);
-  FIS.setFont(TLBFISLib::COMPACT);
-  FIS.writeText(2, 2, "TEST LAYOUT");
-  FIS.resetWorkspace();
+    //FIS.clearRadioText();
+    String speedString = String(pulses);
+    FIS.writeRadioText(0, speedString.c_str());
+    FIS.writeRadioText(1, "KM/H");
 }

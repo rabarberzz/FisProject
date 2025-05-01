@@ -30,7 +30,9 @@ namespace ControllerApp.Resources
         public string GetTotalDistanceString => $"{TotalDistance.ToString("F0", CultureInfo.InvariantCulture)}\nKM";
         public string GetDistanceToNextTurnString => $"{DistanceToNextTurn.ToString("F1", CultureInfo.InvariantCulture)}\nKM";
 
-        public string RoundaboutExit { get; set; } = "";
+        public string RoundaboutExit { get; set; } = "0";
+
+        public string ClearScreen { get; set; } = "false";
 
         private string RemoveDiacritics(string text)
         {
