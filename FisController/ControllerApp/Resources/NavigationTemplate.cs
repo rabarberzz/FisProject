@@ -1,14 +1,19 @@
 ﻿using System.Globalization;
+using System.Text;
 
 namespace ControllerApp.Resources
 {
+    /// <summary>
+    /// Navigation template class for displaying navigation information.
+    /// To be used for initial setup of navigation data.
+    /// </summary>
     public class NavigationTemplate
     {
         private string currentAddress = "null";
         private string nextTurnDescriptor = "null";
         public string CurrentAddress
         {
-            get => currentAddress.ToUpper();
+            get => RemoveDiacritics(currentAddress).ToUpper();
             set => currentAddress = value;
         }
         public TimeOnly ArrivalTime { get; set; }
@@ -21,8 +26,29 @@ namespace ControllerApp.Resources
         }
         public string DirectionsIcon { get; set; } = "\x34\x74\x34";
 
-        public string GetArrivalTimeString => $"{ArrivalTime.ToString("hh:mm")}";
+        public string GetArrivalTimeString => $"{ArrivalTime.ToString("HH:mm", CultureInfo.InvariantCulture)}";
         public string GetTotalDistanceString => $"{TotalDistance.ToString("F0", CultureInfo.InvariantCulture)}\nKM";
         public string GetDistanceToNextTurnString => $"{DistanceToNextTurn.ToString("F1", CultureInfo.InvariantCulture)}\nKM";
+
+        public string RoundaboutExit { get; set; } = "0";
+
+        public string ClearScreen { get; set; } = "false";
+
+        private string RemoveDiacritics(string text)
+        {
+            var normalizedString = text.Normalize(NormalizationForm.FormD);
+            var stringBuilder = new StringBuilder();
+
+            foreach (var c in normalizedString)
+            {
+                var unicodeCategory = CharUnicodeInfo.GetUnicodeCategory(c);
+                if (unicodeCategory != UnicodeCategory.NonSpacingMark)
+                {
+                    stringBuilder.Append(c);
+                }
+            }
+
+            return stringBuilder.ToString().Normalize(NormalizationForm.FormC);
+        }
     }
 }

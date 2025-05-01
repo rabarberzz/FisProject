@@ -17,11 +17,18 @@ public:
 class NaviCharacteristicCallbacks: public BLECharacteristicCallbacks {
 private:
     TLBFISLib& fis;
+    bool& navi_enabled; // Flag to indicate if navigation is enabled
     
 public:
-    NaviCharacteristicCallbacks(TLBFISLib& fis): fis(fis) {}
+    NaviCharacteristicCallbacks(TLBFISLib& fis, bool& navi_enabled): fis(fis), navi_enabled(navi_enabled) {}
     void onWrite(BLECharacteristic *pCharacteristic) override;
     void onNotify(BLECharacteristic *pCharacteristic) override;
+};
+
+class ConfigCharacteristicCallbacks: public BLECharacteristicCallbacks {
+    public:
+    ConfigCharacteristicCallbacks() {}
+    void onWrite(BLECharacteristic *pCharacteristic) override;
 };
 
 class MyBLEServerCallbacks: public BLEServerCallbacks {

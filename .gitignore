@@ -404,5 +404,6 @@ TLBFISLib-Main/
 TLBLib-main/
 VAGFISWriter-master/
 VWFIS/
+/FisController/ControllerApp/Properties/launchSettings.json
 /FisController/ControllerApp/Platforms/Android/Resources/values/secrets.xml
-/FisController/ControllerApp/Platforms/Android/Resources/values/secrets.xml
+/mapbox-sdk-cs

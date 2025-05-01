@@ -1,5 +1,6 @@
 using ControllerApp.Resources;
 using ControllerApp.Services;
+using Mapbox.Directions;
 using Plugin.BLE.Abstractions.EventArgs;
 
 namespace ControllerApp;
@@ -9,7 +10,8 @@ public partial class TestWriteBLE : ContentPage
     private readonly BleService bleService;
     private readonly FisNavigationService fisNavigationService;
     private NavigationTemplate naviTemplate = new NavigationTemplate();
-    public TestWriteBLE(BleService bleService)
+    private MapboxService mapboxService;
+    public TestWriteBLE(BleService bleService, MapboxService mapbox)
 	{
 		InitializeComponent();
         this.bleService = bleService;
@@ -18,6 +20,9 @@ public partial class TestWriteBLE : ContentPage
         BindingContext = naviTemplate;
 
         bleService.SetupConnectedEvent(OnDeviceConnected);
+
+        mapboxService = mapbox;
+        //mapboxService.DirectionsResponseReceived += DirectionsResponseReceived;
     }
 
     private async void WriteNaviEntry_Completed(object sender, EventArgs e)
@@ -36,7 +41,7 @@ public partial class TestWriteBLE : ContentPage
         }
     }
 
-    private void OnDeviceConnected(object sender, DeviceEventArgs e)
+    private void OnDeviceConnected(object? sender, DeviceEventArgs e)
     {
         MainThread.BeginInvokeOnMainThread(() =>
         {
@@ -51,7 +56,56 @@ public partial class TestWriteBLE : ContentPage
 
     private void CycleDirection_Clicked(object sender, EventArgs e)
     {
-        naviTemplate = fisNavigationService.SetUpNextDirection();
+        naviTemplate = fisNavigationService.GetCurrentTemplate();
         BindingContext = naviTemplate;
+    }
+
+    private void DirectionsResponseReceived(object? sender, DirectionsResponse e)
+    {
+        var template = new List<NavigationTemplate>();
+        var legs = e.Routes.FirstOrDefault()?.Legs.FirstOrDefault();
+        if (legs != null)
+        {
+            template = mapLegToTemplates(legs);
+        }
+        fisNavigationService.SetNavigationTemplates(template);
+    }
+
+    private List<NavigationTemplate> mapLegToTemplates(Leg leg)
+    {
+        var templates = new List<NavigationTemplate>();
+        var totalDistance = leg.Distance;
+
+        foreach (var step in leg.Steps)
+        {
+            templates.Add(new NavigationTemplate
+            {
+                CurrentAddress = step.Name,
+                TotalDistance = CalculateRemainingDistance(step, leg.Steps)/1000,
+                DistanceToNextTurn = (decimal)step.Distance/1000,
+                ArrivalTime = TimeOnly.FromDateTime(DateTime.Now.AddSeconds(leg.Duration)),
+            });
+        }
+
+        return templates;
+    }
+
+    private decimal CalculateRemainingDistance(Step currentStep, List<Step> allSteps)
+    {
+        decimal distance = 0;
+        var remainingSteps = allSteps.GetRange(allSteps.IndexOf(currentStep), allSteps.Count - allSteps.IndexOf(currentStep));
+        distance = (decimal)remainingSteps.Sum(x => x.Distance);
+
+        return distance;
+    }
+
+    // Calculates the arrival time for the next step at each step
+    // Possibly wont be needed
+    private TimeOnly CalculateRemainingDuration(Step currentStep, List<Step> allSteps, double totalDuration)
+    {
+        var duration = new TimeOnly();
+        var remainingSteps = allSteps.GetRange(allSteps.IndexOf(currentStep), allSteps.Count - allSteps.IndexOf(currentStep));
+        var remainingDuration = totalDuration - remainingSteps.Sum(x => x.Duration);
+        return TimeOnly.FromDateTime(DateTime.Now.AddSeconds(remainingDuration));
     }
 }

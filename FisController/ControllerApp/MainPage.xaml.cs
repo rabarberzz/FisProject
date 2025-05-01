@@ -1,112 +1,103 @@
-﻿using Mapsui;
-using Mapsui.Layers;
-using Timer = System.Timers.Timer;
+﻿using ControllerApp.Services;
+using Mapbox.Directions;
+using Mapsui;
+using Mapsui.Projections;
 
 namespace ControllerApp
 {
     public partial class MainPage : ContentPage
     {
-        //int count = 0;
-        private MyLocationLayer locationLayer;
-        private Timer locationUpdateTimer;
+        private MapboxService mapboxService;
+        private LocationService locationService;
+        private MapsuiService mapsuiService;
+        private DirectionsResponse? localResponse;
+        private NavigationService navigationService;
 
-        public MainPage()
+        public MainPage(MapboxService mapboxSvc, LocationService locationSvc, MapsuiService mapsuiSvc, NavigationService navSvc)
         {
             InitializeComponent();
-            InitializeMap();
+            mapboxService = mapboxSvc;
+            mapboxService.DirectionsResponseReceived += OnDirectionsReceived;
+            mapboxService.RequestFailed += OnHttpRequestFailed;
+
+            locationService = locationSvc;
+            locationService.LocationUpdatedMapsui += OnLocationUpdated;
+            locationService.LocationUpdateFailed += OnExceptionAlert;
+
+            mapsuiService = mapsuiSvc;
+
+            mapControlElement.Content = mapsuiService.MapControl;
+
+            navigationService = navSvc;
         }
 
-        private async void InitializeMap()
+        private void OnLocationUpdated(object? sender, MPoint locationPoint)
         {
-            var mapControl = new Mapsui.UI.Maui.MapControl();
-
-            mapControl.Map?.Layers.Add(Mapsui.Tiling.OpenStreetMap.CreateTileLayer());
-
-            var currentLocation = await GetCurrentLocationAsync();
-            if (currentLocation != null && mapControl.Map != null)
+            if (locationPoint != null && mapsuiService.MapControl.Map != null)
             {
-                locationLayer = new MyLocationLayer(mapControl.Map, currentLocation);
-                mapControl.Map.Layers.Add(locationLayer);
-
-                StartLocationUpdates();
+                mapsuiService.LocationLayer.UpdateMyLocation(locationPoint);
             }
-
-            Content = mapControl;
         }
 
-        private async Task<MPoint> GetCurrentLocationAsync()
+        private void OnButtonClick(object sender, EventArgs e)
         {
-            try
-            {
-                var request = new GeolocationRequest(GeolocationAccuracy.Medium);
-                var location = await Geolocation.GetLocationAsync(request);
+            mapboxService.GetDirections();
+        }
 
-                if (location != null)
+        private void OnDirectionsReceived(object? sender, DirectionsResponse response)
+        {
+            var directions = response;
+            if (directions.Code != null && mapsuiService != null)
+            {
+                responseEntry.Text = directions.Code;
+                mapsuiService.SetupPointsOnMap(directions);
+                mapsuiService.SetupLineOnMap(directions);
+                localResponse = response;
+            }
+        }
+
+        private void OnHttpRequestFailed(object? sender, Exception e)
+        {
+            responseEntry.Text = e.Message;
+        }
+
+        private void OnExceptionAlert(object? sender, Exception exception)
+        {
+            MainThread.BeginInvokeOnMainThread(() => DisplayAlert("Error", exception.Message, "OK"));
+        }
+
+        private void ClosestPoint_Clicked(object sender, EventArgs e)
+        {
+            var location = locationService.CurrentLocation;
+            if (location != null)
+            {
+                var locationMPoint = new MPoint(location.Longitude, location.Latitude);
+                var convertedLocation = Mapsui.Projections.SphericalMercator.FromLonLat(locationMPoint);
+                var result = mapsuiService.GetClosestGeometryPointFromCoordinates(convertedLocation);
+
+                var convertedResult = new MPoint();
+                if (result != null)
                 {
-                    var locationMPoint = new MPoint(location.Longitude, location.Latitude);
-                    return Mapsui.Projections.SphericalMercator.FromLonLat(locationMPoint);
+                    convertedResult = SphericalMercator.ToLonLat(new MPoint(result.X, result.Y));
                 }
             }
-            catch (FeatureNotSupportedException fnsEx)
-            {
-                // Handle not supported on device exception
-            }
-            catch (FeatureNotEnabledException fneEx)
-            {
-                // Handle not enabled on device exception
-            }
-            catch (PermissionException pEx)
-            {
-                // Handle permission exception
-            }
-            catch (Exception ex)
-            {
-                // Unable to get location
-            }
-
-            return null;
         }
 
-        private async Task UpdateLocation()
+        private void ComparisonButtonClicked(object sender, EventArgs e)
         {
-            var currentLocation = await GetCurrentLocationAsync();
-            if (currentLocation != null && mapControl.Map != null)
+            navigationService.IncrementManeuver();
+        }
+
+        private void CalculateToManeuverClicked(object sender, EventArgs e)
+        {
+            var location = locationService.CurrentLocation;
+            if (location != null)
             {
-                locationLayer.UpdateMyLocation(currentLocation);
+                var locationMPoint = new MPoint(location.Longitude, location.Latitude);
+                var convertedLocation = Mapsui.Projections.SphericalMercator.FromLonLat(locationMPoint);
+
+                mapsuiService.CalculateDistanceStraightToPoint(convertedLocation);
             }
         }
-
-        private void StartLocationUpdates()
-        {
-            locationUpdateTimer = new Timer(2000);
-            locationUpdateTimer.Elapsed += async (sender, e) => await UpdateLocation();
-            locationUpdateTimer.Start();
-        }
-
-        //private MyLocationLayer CreateLocationMarker(double latitude, double longitude)
-        //{
-        //    var point = new PointFeature(latitude, longitude);
-        //    var style = new SymbolStyle
-        //    {
-        //        SymbolScale = 0.8,
-        //        Fill = new Brush(Color.Red),
-        //        Outline = new Pen(Color.Black, 2)
-        //    };
-        //    feature.Styles.Add(style);
-        //    return feature;
-        //}
-
-        //private void OnCounterClicked(object sender, EventArgs e)
-        //{
-        //    count++;
-
-        //    if (count == 1)
-        //        CounterBtn.Text = $"Clicked {count} time";
-        //    else
-        //        CounterBtn.Text = $"Clicked {count} times";
-
-        //    SemanticScreenReader.Announce(CounterBtn.Text);
-        //}
     }
-
 }

@@ -1,3 +1,4 @@
+using ControllerApp.Resources;
 using ControllerApp.Services;
 using ControllerApp.ViewModels;
 using Plugin.BLE.Abstractions.EventArgs;
@@ -7,13 +8,15 @@ namespace ControllerApp
     public partial class BluetoothPage : ContentPage
     {
         private readonly BleService bleService;
+        private readonly FisNavigationService fisSvc;
 
-        public BluetoothPage(BleService bleService, DevicesViewModel devicesViewModel)
+        public BluetoothPage(BleService bleService, DevicesViewModel devicesViewModel, FisNavigationService fisSvc)
         {
             InitializeComponent();
             this.bleService = bleService;
             Initialize();
             BindingContext = devicesViewModel;
+            this.fisSvc = fisSvc;
 
             devicesViewModel.DeviceConnectionChanged += OnDeviceConnectionChanged;
         }
@@ -24,10 +27,6 @@ namespace ControllerApp
             {
                 BleStatusLabel.Text = bleService.GetBleStatus();
             });
-            //adapter = bleService.StartScan().Result;
-
-            //bleService.SetupDevicesDiscoveredEvent(Devices);
-            //DeviceList.ItemsSource = Devices;
         }
 
         private async void OnScanForDevices_Clicked(object sender, EventArgs e)
@@ -38,9 +37,29 @@ namespace ControllerApp
         private async void OnTest_Clicked(object sender, EventArgs e)
         {
             await bleService.TestConnection();
+            TestNavigationIcons();
         }
 
-        private void OnDeviceConnectionChanged(object sender, DeviceEventArgs args)
+        private void TestNavigationIcons()
+        {
+            var iconsList = DirectionsCodes.GetDirectionsCodes();
+            foreach (var icon in iconsList)
+            {
+                var template = new NavigationTemplate()
+                {
+                    ArrivalTime = new TimeOnly(00, 00),
+                    DistanceToNextTurn = 0,
+                    TotalDistance = 0,
+                    DirectionsIcon = icon.Value
+                };
+                
+                fisSvc.SetCurrentNavigation(template);
+
+                Thread.Sleep(2000);
+            }
+        }
+
+        private void OnDeviceConnectionChanged(object? sender, DeviceEventArgs args)
         {
             if (args.Device != null)
             {
@@ -54,38 +73,6 @@ namespace ControllerApp
                 BleConnectStatusLabel.Dispatcher.Dispatch(() =>
                 {
                     BleConnectStatusLabel.Text = "Disconnected";
-                });
-            }
-        }
-
-        //private async Task ConnectToDevice(IDevice device)
-        //{
-        //    var result = await bleService.TryConnectToDevice(device);
-        //    SetBleConnectStatusLabelDispatch(result);
-        //    ConnectCommand = new Command<IDevice>(async (device) => await DisconnectFromDevice(device));
-            
-        //}
-
-        //private async Task DisconnectFromDevice(IDevice device)
-        //{
-        //    await bleService.TryDisconnectFromDevice(device);
-        //    SetBleConnectStatusLabelDispatch(false);
-        //}
-
-        private void SetBleConnectStatusLabelDispatch(bool connectResult)
-        {
-            if (connectResult)
-            {
-                BleConnectStatusLabel.Dispatcher.Dispatch(() =>
-                {
-                    BleConnectStatusLabel.Text = "Connected";
-                });
-            }
-            else
-            {
-                BleConnectStatusLabel.Dispatcher.Dispatch(() =>
-                {
-                    BleConnectStatusLabel.Text = "Failed to connect";
                 });
             }
         }

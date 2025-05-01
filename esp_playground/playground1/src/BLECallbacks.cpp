@@ -8,7 +8,8 @@
 void writeNaviTextInWorkspace(const std::string& value, TLBFISLib& fis);
 void writeRadioTextInWorkspace(const std::string& value, TLBFISLib& fis);
 std::vector<std::string> splitIncomingNaviData(const std::string& s, char delimiter);
-void parseIncomingNaviData(const std::string& data, std::string& icon, std::string& address, std::string& time, std::string& total, std::string& turn);
+void parseIncomingNaviData(const std::string& data, std::string& icon, std::string& address, 
+    std::string& time, std::string& total, std::string& turn, std::string& exit, std::string& clear);
 
 void TextCharacteristicCallbacks::onWrite(BLECharacteristic *pCharacteristic) {
     std::string value = pCharacteristic->getValue();
@@ -27,6 +28,25 @@ void TextCharacteristicCallbacks::onNotify(BLECharacteristic *pCharacteristic) {
 void NaviCharacteristicCallbacks::onWrite(BLECharacteristic *pCharacteristic) {
     std::string value = pCharacteristic->getValue();
     Serial.printf("Navigation Characteristic written: %s\n", value.c_str());
+
+    if (value == "clear" && navi_enabled == true)
+    {
+        fis.turnOff();
+        navi_enabled = false;
+        return;
+    }
+
+    if (value == "clear" && navi_enabled == false)
+    {
+        return;
+    }
+
+    if (value != "clear" && navi_enabled == false)
+    {
+        fis.initScreen();
+        fis.clear();
+        navi_enabled = true;
+    }
     
     writeNaviTextInWorkspace(value, fis);
 }
@@ -36,6 +56,13 @@ void NaviCharacteristicCallbacks::onNotify(BLECharacteristic *pCharacteristic) {
     Serial.printf("Navigation Characteristic notified: %s\n", value.c_str());
 
     writeNaviTextInWorkspace(value, fis);
+}
+
+void ConfigCharacteristicCallbacks::onWrite(BLECharacteristic *pCharacteristic) {
+    std::string value = pCharacteristic->getValue();
+    Serial.printf("Config Characteristic written: %s\n", value.c_str());
+    
+    // Handle configuration changes here if needed
 }
 
 void MyBLEServerCallbacks::onConnect(BLEServer* pServer) {
@@ -50,38 +77,48 @@ void MyBLEServerCallbacks::onDisconnect(BLEServer* pServer) {
     pServer->startAdvertising();
 }
 
-void writeNaviTextInWorkspace(const std::string& value, TLBFISLib& fis) {
-    std::string icon, address, time, total, turn;
-    parseIncomingNaviData(value, icon, address, time, total, turn);
+void writeNaviTextInWorkspace(const std::string& value, TLBFISLib& fis) {  
+    std::string icon, address, time, total, turn, exit, clear;
+    parseIncomingNaviData(value, icon, address, time, total, turn, exit, clear);
 
-    Serial.println("Icon: ");
-    Serial.print(icon.c_str());
-    Serial.println("Address: ");
-    Serial.print(address.c_str());
-    Serial.println("Time: ");
-    Serial.print(time.c_str());
-    Serial.println("Total: ");
-    Serial.print(total.c_str());
-    Serial.println("Turn: ");
-    Serial.print(turn.c_str());
+    if (clear == "true")
+    {
+        fis.setWorkspace(0, 0, 64, 55, true);
+    }
+    else
+    {
+        fis.setWorkspace(0, 0, 64, 55);
+    }
 
-    fis.setWorkspace(0, 24, 64, 55, true);
-    fis.drawRect(0, 0, 64, 55, TLBFISLib::NOT_FILLED);
+    fis.setTextAlignment(TLBFISLib::CENTER);
+    fis.setFont(TLBFISLib::GRAPHICS);
+    fis.writeMultiLineText(0, 8, icon.c_str());
+
     fis.setFont(TLBFISLib::COMPACT);
     fis.setLineSpacing(1);
 
+    if (exit != "0")
+    {
+        if (exit == "1")
+        {
+            fis.writeChar(0, 18, exit[0]);
+        }
+        else
+        {
+            fis.writeChar(0, 18, exit[0]);
+        }
+    }
+    
+
     fis.setTextAlignment(TLBFISLib::LEFT);
-    fis.writeText(2, 2, time.c_str());
-    fis.writeMultiLineText(2, 10, total.c_str());
+    fis.writeText(0, 1, time.c_str());
+    fis.writeMultiLineText(0, 9, total.c_str());
 
     fis.setTextAlignment(TLBFISLib::RIGHT);
-    fis.writeMultiLineText(-1, 2, turn.c_str());
+    fis.writeMultiLineText(0, 1, turn.c_str());
 
     fis.setTextAlignment(TLBFISLib::CENTER);
-    fis.writeText(0, 46, address.c_str());
-
-    fis.setFont(TLBFISLib::GRAPHICS);
-    fis.writeMultiLineText(0, 10, icon.c_str());
+    fis.writeText(0, 40, address.c_str());
 
     fis.resetWorkspace();
 }
@@ -104,14 +141,18 @@ std::vector<std::string> splitIncomingNaviData(const std::string& s, char delimi
     return tokens;
 }
 
-void parseIncomingNaviData(const std::string& data, std::string& icon, std::string& address, std::string& time, std::string& total, std::string& turn) {
+void parseIncomingNaviData(const std::string& data, std::string& icon, 
+    std::string& address, std::string& time, std::string& total, 
+    std::string& turn, std::string& exit, std::string& clear) {
     std::vector<std::string> tokens = splitIncomingNaviData(data, '/');
     Serial.println(tokens.size());
-    if (tokens.size() == 5) {
+    if (tokens.size() == 7) {
         icon = tokens[0].substr(5); //substr removes prefixes like "icon_"
         address = tokens[1].substr(8);
         time = tokens[2].substr(5);
         total = tokens[3].substr(6);
         turn = tokens[4].substr(5);
+        exit = tokens[5].substr(5);
+        clear = tokens[6].substr(6);
     }
 }

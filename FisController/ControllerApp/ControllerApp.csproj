@@ -61,10 +61,56 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <None Remove="Platforms\Android\Resources\values\secrets.xml" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="Mapsui.Maui" Version="4.1.8" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="6.0.1" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.0" />
+		<PackageReference Include="System.Security.Permissions" Version="9.0.0" />
 		<PackageReference Include="Plugin.BLE" Version="3.1.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Reference Include="Mapbox.Directions">
+	    <HintPath>..\..\mapbox-sdk-cs\bin\Debug\net35\Mapbox.Directions.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Mapbox.Geocoding">
+	    <HintPath>..\..\mapbox-sdk-cs\bin\Debug\net35\Mapbox.Geocoding.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Mapbox.IO.Compression">
+	    <HintPath>..\..\mapbox-sdk-cs\bin\Debug\net35\Mapbox.IO.Compression.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Mapbox.Json">
+	    <HintPath>..\..\mapbox-sdk-cs\bin\Debug\net35\Mapbox.Json.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Mapbox.Map">
+	    <HintPath>..\..\mapbox-sdk-cs\bin\Debug\net35\Mapbox.Map.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Mapbox.Platform">
+	    <HintPath>..\..\mapbox-sdk-cs\bin\Debug\net35\Mapbox.Platform.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Mapbox.Utils">
+	    <HintPath>..\..\mapbox-sdk-cs\bin\Debug\net35\Mapbox.Utils.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Mapbox.VectorTile.ExtensionMethods">
+	    <HintPath>..\..\mapbox-sdk-cs\bin\Debug\net35\Mapbox.VectorTile.ExtensionMethods.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Mapbox.VectorTile.Geometry">
+	    <HintPath>..\..\mapbox-sdk-cs\bin\Debug\net35\Mapbox.VectorTile.Geometry.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Mapbox.VectorTile.PbfReader">
+	    <HintPath>..\..\mapbox-sdk-cs\bin\Debug\net35\Mapbox.VectorTile.PbfReader.dll</HintPath>
+	  </Reference>
+	  <Reference Include="Mapbox.VectorTile.VectorTileReader">
+	    <HintPath>..\..\mapbox-sdk-cs\bin\Debug\net35\Mapbox.VectorTile.VectorTileReader.dll</HintPath>
+	  </Reference>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Models\" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -72,7 +118,25 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Update="Properties\Resources.Designer.cs">
+	    <DesignTime>True</DesignTime>
+	    <AutoGen>True</AutoGen>
+	    <DependentUpon>Resources.resx</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Update="Properties\Resources.resx">
+	    <Generator>ResXFileCodeGenerator</Generator>
+	    <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+	  </EmbeddedResource>
+	</ItemGroup>
+
+	<ItemGroup>
 	  <MauiXaml Update="BluetoothPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="NavigationSetup.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="TestWriteBLE.xaml">
