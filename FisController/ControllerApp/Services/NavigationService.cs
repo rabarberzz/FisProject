@@ -1,4 +1,5 @@
 ﻿using ControllerApp.ManeuverHelper;
+using ControllerApp.Models;
 using ControllerApp.Resources;
 using Mapbox.Directions;
 using Mapsui;
@@ -69,6 +70,7 @@ namespace ControllerApp.Services
         public void StopNavigation()
         {
             NavigationSessionStarted = false;
+            fisNavigationService.ClearNaviScreen();
         }
 
         public void IncrementManeuver()
@@ -138,6 +140,7 @@ namespace ControllerApp.Services
                     && fisNavigationService.GetCurrentTemplate() != templateMap[currentStep])
                 {
                     currentStep = templateMap.Keys.First(x => x.Maneuver == currentManeuver);
+                    templateMap[currentStep].ClearScreen = "true";
                     fisNavigationService.SetCurrentNavigation(templateMap[currentStep]);
                     followingRoute = CheckIfUserIsFollowingRoute(location);
                     return;

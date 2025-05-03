@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"  
+           xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+           xmlns:vm="clr-namespace:ControllerApp.ViewModels"
+           xmlns:local="clr-namespace:ControllerApp.Validation"  
+           x:Class="ControllerApp.EspConfigPage"  
+           Title="ESP Configuration Page">
+
+    <ContentPage.BindingContext>
+        <vm:EspConfigViewModel />
+    </ContentPage.BindingContext>
+
+    <VerticalStackLayout>
+        <Label
+          Text="Speed display enabled"
+          VerticalOptions="Center"
+          HorizontalOptions="Center" />
+        <CheckBox
+          x:Name="SpeedDisplayCheckBox"
+          IsChecked="{Binding SpeedDisplayEnabled}"
+          HorizontalOptions="Center" />
+        <Label
+          Text="Tyre and rim parameters"
+          VerticalOptions="Center"
+          HorizontalOptions="Center" />
+        <Entry
+          x:Name="TyreWidthEntry"
+          Placeholder="Enter tyre width"
+          Keyboard="Numeric"
+          WidthRequest="200"
+          Text="{Binding TyreWidth}" >
+            <Entry.Behaviors>
+                <local:NumericValidatationBehavior />
+            </Entry.Behaviors>
+        </Entry>
+       <Entry
+          x:Name="TyreAspectRatioEntry"
+          Placeholder="Enter tyre aspect ratio"
+          Keyboard="Numeric"
+          WidthRequest="200"
+          Text="{Binding TyreAspectRatio}" >
+           <Entry.Behaviors>
+               <local:NumericValidatationBehavior />
+           </Entry.Behaviors>
+       </Entry>
+       <Entry
+          x:Name="TyreDiameterEntry"
+          Placeholder="Enter tyre diameter"
+          Keyboard="Numeric"
+          WidthRequest="200"
+          Text="{Binding TyreDiameter}" >
+           <Entry.Behaviors>
+               <local:NumericValidatationBehavior />
+           </Entry.Behaviors>
+       </Entry>
+       <Label   
+          Text="Fine tune ratio"
+          VerticalOptions="Center"
+          HorizontalOptions="Center"
+          Padding="40"/>
+        <HorizontalStackLayout HorizontalOptions="Center">
+            <Button
+                Text="-" 
+                Clicked="OnDecrementButtonClicked"
+                WidthRequest="50" />
+            <Entry
+                x:Name="FineTuneRatioEntry"
+                Placeholder="Fine tune speed conversion ratio"
+                IsReadOnly="True"
+                Text="{Binding FineTuneRatio, Mode=TwoWay}"
+                HorizontalOptions="Center"
+                WidthRequest="100" />
+            <Button 
+                Text="+" 
+                Clicked="OnIncrementButtonClicked"
+                WidthRequest="50" />
+        </HorizontalStackLayout>
+        <Button
+            x:Name="SendButton"
+            Text="Set config"
+            Clicked="SendButton_Clicked"
+            HorizontalOptions="Center" 
+            Margin="40" />
+    </VerticalStackLayout>  
+</ContentPage>

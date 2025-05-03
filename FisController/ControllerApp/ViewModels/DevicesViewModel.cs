@@ -11,12 +11,30 @@ namespace ControllerApp.ViewModels
     public class DevicesViewModel : INotifyPropertyChanged
     {
         private readonly BleService bleService;
+
         public string ConnectionButtonText { get; private set; } = "Connect/Disconnect";
 
         public event PropertyChangedEventHandler? PropertyChanged;
+
         public ICommand ConnectCommand { get; private set; }
+
         public ObservableCollection<IDevice> Devices { private set; get; } = new ObservableCollection<IDevice>();
+        
         public event EventHandler<DeviceEventArgs>? DeviceConnectionChanged;
+        
+        private string bleConnectionStatus = "Disconnected";
+
+        public string BleConnectionStatus
+        {
+            get => bleConnectionStatus;
+            set
+            {
+                if (bleConnectionStatus != value)
+                {
+                    bleConnectionStatus = value;
+                }
+            }
+        }
 
         // Default constructor for XAML instantiation
         public DevicesViewModel()
@@ -39,6 +57,7 @@ namespace ControllerApp.ViewModels
             });
 
             bleService.SetupDevicesDiscoveredEvent(Devices);
+            DeviceConnectionChanged += OnDeviceConnectionChanged;
         }
 
         private async Task ConnectToDevice(IDevice device)
@@ -62,14 +81,22 @@ namespace ControllerApp.ViewModels
             }
         }
 
+        private void OnDeviceConnectionChanged(object? sender, DeviceEventArgs args)
+        {
+            if (args.Device != null)
+            {
+                bleConnectionStatus = $"Connected: {args.Device.Name}";
+            }
+            else
+            {
+                bleConnectionStatus = "Disconnected";
+            }
+            OnPropertyChanged(nameof(BleConnectionStatus));
+        }
+
         protected void OnPropertyChanged([CallerMemberName] string propertyName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        protected virtual void OnDeviceConnectionChanged(DeviceEventArgs e)
-        {
-            DeviceConnectionChanged?.Invoke(this, e);
         }
     }
 }

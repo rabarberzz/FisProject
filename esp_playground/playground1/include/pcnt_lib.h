@@ -87,7 +87,7 @@ static void pcnt_init_and_start(void)
     //pcnt_intr_enable(PCNT_INPUT_UNIT);
 
     /* Everything is set up, now go to counting */
-    pcnt_counter_resume(PCNT_INPUT_UNIT);
+    //pcnt_counter_resume(PCNT_INPUT_UNIT);
 }
 
 static void pcnt_clear() {
@@ -100,4 +100,12 @@ static void pcnt_clear() {
 static int pcnt_get(int16_t* pcount) {
           int16_t count = pcnt_get_counter_value(PCNT_INPUT_UNIT, pcount);
           return count;
+}
+
+static void pcnt_start() {
+    pcnt_counter_resume(PCNT_INPUT_UNIT);
+}
+
+static void pcnt_stop() {
+    pcnt_counter_pause(PCNT_INPUT_UNIT);
 }

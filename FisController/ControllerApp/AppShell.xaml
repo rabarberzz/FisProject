@@ -20,6 +20,10 @@
         ContentTemplate="{DataTemplate local:BluetoothPage}"
         Route="BluetoothPage" />
     <ShellContent
+        Title="ESP Config"
+        ContentTemplate="{DataTemplate local:EspConfigPage}"
+        Route="ESPConfigPage" />
+    <ShellContent
         Title="BLE Write"
         ContentTemplate="{DataTemplate local:TestWriteBLE}"
         Route="TestWriteBLE" IsVisible="False"/>

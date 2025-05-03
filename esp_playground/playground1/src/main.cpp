@@ -8,6 +8,7 @@
 #include <BLECallbacks.h>
 #include <FISDrawings.h>
 #include <hw_timer.h>
+#include <Preferences.h>
 
 // ==== global definitions ====
 #define SPI_INSTANCE SPI
@@ -23,6 +24,7 @@ void beginFunction();
 void errorHandler(unsigned long _);
 //void drawSpeedFromPulses(int16_t pulses); // Function to draw speed from pulse count
 void initBLE();
+void onConfigChangedCallback(bool newSpeedEnabled);
 
 // ==== definitions ====
 // = BLE =
@@ -32,8 +34,10 @@ static BLEUUID naviUUID("f15aaf02-fc20-47c7-a574-9411948aed62"); // navigation c
 static BLEUUID configUUID("f15aaf03-fc20-47c7-a574-9411948aed62"); // configuration characteristic UUID
 const String DeviceName = "ESP32-BT-Server";
 bool connected = false;
-bool navi_enabled = true; // Flag to indicate if navigation is enabled
-bool speed_enabled = true;
+bool navi_enabled = false; // Flag to indicate if navigation is enabled
+bool speed_enabled; // Speed output enabled
+float speed_ratio; // Speed ratio for conversion
+Preferences preferences;
 
 
 // ==== inits ====
@@ -55,6 +59,12 @@ void setup()
   // setup serial
   Serial.begin(115200);
 
+  //setup persistance / preferences
+  preferences.begin("FisControl", false); // Initialize preferences with a namespace
+
+  speed_ratio = preferences.getFloat("speed_ratio", 0.900); 
+  speed_enabled = preferences.getBool("speed_enabled", true);
+
   // setup led pin mode
   pinMode(LED_BUILTIN, OUTPUT);
 
@@ -67,8 +77,6 @@ void setup()
   //FIS.clear();
   //FIS.writeRadioText(0, "TEST");
   //FIS.errorFunction(errorHandler); // fis disruption handler handle
-  FIS.setTextAlignment(TLBFISLib::CENTER);
-  FIS.setFont(TLBFISLib::COMPACT);
   FIS.clearRadioText(); // Clear the radio text area (turns off that section)
   Serial.println("TLBFISLib initialized.");
 
@@ -78,9 +86,15 @@ void setup()
   //drawNavigation();
   //FISDraw.drawNavigation2();
 
-  pcnt_init_and_start(); // Initialize and start the pulse counter
+  pcnt_init_and_start(); // Initialize the pulse counter
 
   init_hw_timer(); // Initialize the hardware timer
+
+  if (speed_enabled)
+  {
+    pcnt_start();
+    resume_counter_task();
+  }
 
   initBLE(); // Initialize BLE service
 }
@@ -99,23 +113,6 @@ void loop()
     digitalWrite(LED_BUILTIN, LOW);
   }
 
-  // counting works now :)
-  /*int16_t count;
-  pcnt_init_and_start();
-  delay(1000);
-  unsigned long lastMillis = 0;
-  
-  pcnt_get(&count);
-
-  if (count > 0){
-    Serial.printf("Pulses: %d\n", count);
-    drawSpeedFromPulses(count, true);
-  }
-  pcnt_clear();
-  if (millis() - lastMillis >= 1000) {
-    lastMillis = millis();
-  }*/
-  
   //Maintain the FIS connection.
   FIS.update();
 }
@@ -176,7 +173,9 @@ void initBLE()
     BLECharacteristic::PROPERTY_WRITE |
     BLECharacteristic::PROPERTY_NOTIFY
   );
-  configCharacteristic->setCallbacks(new ConfigCharacteristicCallbacks()); // Register the config callback
+  String configValue = "speed_" + String(speed_enabled) + "/ratio_" + String(speed_ratio, 3);
+  configCharacteristic->setValue(configValue.c_str()); // Register the config callback
+  configCharacteristic->setCallbacks(new ConfigCharacteristicCallbacks(speed_ratio, preferences, onConfigChangedCallback));
 
   pService->start();
 
@@ -192,8 +191,29 @@ void initBLE()
 
 void drawSpeedFromPulses(int16_t pulses)
 {
+    float speed = pulses * speed_ratio; // Convert pulses to speed (example conversion factor)
+    int roundedSpeed = round(speed); // Round the speed to the nearest integer
     //FIS.clearRadioText();
-    String speedString = String(pulses);
+    String speedString = String(roundedSpeed);
     FIS.writeRadioText(0, speedString.c_str());
     FIS.writeRadioText(1, "KM/H");
+}
+
+void onConfigChangedCallback(bool newSpeedEnabled)
+{
+  if (speed_enabled != newSpeedEnabled)
+  {
+    if (newSpeedEnabled)
+    {
+      pcnt_start();
+      resume_counter_task();
+    }
+    else
+    {
+      pcnt_stop();
+      pause_counter_task();
+      FIS.clearRadioText(); // Clear the radio text area (turns off that section)
+    }
+  }
+  speed_enabled = newSpeedEnabled; // Update the speed_enabled variable
 }

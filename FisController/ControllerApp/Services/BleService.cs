@@ -13,6 +13,7 @@ namespace ControllerApp.Services
         static Guid serviceUUID = Guid.Parse("f15aaf00-fc20-47c7-a574-9411948aed62"); // device/service UUID
         static Guid charUUID = Guid.Parse("f15aaf01-fc20-47c7-a574-9411948aed62"); // text characteristic UUID
         static Guid naviUUID = Guid.Parse("f15aaf02-fc20-47c7-a574-9411948aed62"); // navigation characteristic UUID
+        static Guid configUUID = Guid.Parse("f15aaf03-fc20-47c7-a574-9411948aed62"); // navigation characteristic UUID
 
         private IBluetoothLE ble;
         private IAdapter adapter;
@@ -21,6 +22,7 @@ namespace ControllerApp.Services
 
         private ICharacteristic? radioCharacteristic;
         private ICharacteristic? naviCharacteristic;
+        private ICharacteristic? configCharacteristic;
 
         public BleService()
         {
@@ -39,7 +41,8 @@ namespace ControllerApp.Services
             {
                 radioCharacteristic = await service.GetCharacteristicAsync(charUUID);
                 naviCharacteristic = await service.GetCharacteristicAsync(naviUUID);
-                return radioCharacteristic != null && naviCharacteristic != null;
+                configCharacteristic = await service.GetCharacteristicAsync(configUUID);
+                return radioCharacteristic != null && naviCharacteristic != null && configCharacteristic != null;
             }
 
             return false;
@@ -58,30 +61,52 @@ namespace ControllerApp.Services
             return characters;
         }
 
-        private void SyncDeviceList(ObservableCollection<IDevice> devices)
+        //private void SyncDeviceList(ObservableCollection<IDevice> devices)
+        //{
+        //    MainThread.BeginInvokeOnMainThread(() =>
+        //    {
+        //        devices.Clear();
+        //        foreach (var device in adapter.ConnectedDevices)
+        //        {
+        //            if (!devices.Contains(device))
+        //            {
+        //                devices.Add(device);
+        //            }
+        //        }
+        //        foreach (var device in adapter.DiscoveredDevices)
+        //        {
+        //            if (!devices.Contains(device))
+        //            {
+        //                devices.Add(device);
+        //            }
+        //        }
+        //        foreach (var device in adapter.BondedDevices)
+        //        {
+        //            if (!devices.Contains(device))
+        //            {
+        //                devices.Add(device);
+        //            }
+        //        }
+        //    });
+        //}
+
+        // this is better
+        private void SyncDeviceList(ObservableCollection<IDevice> devices, DeviceEventArgs args, bool disconnect = false)
         {
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                devices.Clear();
-                foreach (var device in adapter.ConnectedDevices)
+                if (disconnect)
                 {
-                    if (!devices.Contains(device))
+                    if (devices.Contains(args.Device))
                     {
-                        devices.Add(device);
+                        devices.Remove(args.Device);
                     }
                 }
-                foreach (var device in adapter.DiscoveredDevices)
+                else
                 {
-                    if (!devices.Contains(device))
+                    if (!devices.Contains(args.Device))
                     {
-                        devices.Add(device);
-                    }
-                }
-                foreach (var device in adapter.BondedDevices)
-                {
-                    if (!devices.Contains(device))
-                    {
-                        devices.Add(device);
+                        devices.Add(args.Device);
                     }
                 }
             });
@@ -168,9 +193,9 @@ namespace ControllerApp.Services
                 return;
             }
 
-            adapter.DeviceDiscovered += (s, a) => SyncDeviceList(devices);
-            adapter.DeviceConnected += (s, a) => SyncDeviceList(devices);
-            adapter.DeviceDisconnected += (s, a) => SyncDeviceList(devices);
+            adapter.DeviceDiscovered += (s, a) => SyncDeviceList(devices, a);
+            adapter.DeviceConnected += (s, a) => SyncDeviceList(devices, a);
+            adapter.DeviceDisconnected += (s, a) => SyncDeviceList(devices, a, true);
         }
 
         public async Task SendRadioBytes(string text)
@@ -209,6 +234,25 @@ namespace ControllerApp.Services
                 var encodedText = Encoding.UTF8.GetBytes("clear");
                 await naviCharacteristic.WriteAsync(encodedText);
             }
+        }
+
+        public async Task SendConfigBytes(string text)
+        {
+            if (configCharacteristic != null)
+            {
+                var encodedText = Encoding.UTF8.GetBytes(text);
+                await configCharacteristic.WriteAsync(encodedText);
+            }
+        }
+
+        public async Task<string?> GetConfigBytes()
+        {
+            if (configCharacteristic != null)
+            {
+                var result = await configCharacteristic.ReadAsync();
+                return Encoding.UTF8.GetString(result.data);
+            }
+            return null;
         }
 
         public void SetupConnectedEvent(EventHandler<DeviceEventArgs> eventHandler)

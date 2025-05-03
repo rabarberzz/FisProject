@@ -1,4 +1,4 @@
-using ControllerApp.Resources;
+using ControllerApp.Models;
 using ControllerApp.Services;
 using Mapbox.Directions;
 using Plugin.BLE.Abstractions.EventArgs;

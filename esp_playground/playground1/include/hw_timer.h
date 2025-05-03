@@ -20,6 +20,7 @@ void pcnt_init_and_start(void);
 static const char *TAG = "HW_TIMER";
 
 static QueueHandle_t pulseQueue = NULL; // Queue to hold pulse counts
+static TaskHandle_t pulseTaskHandle = NULL; // Handle for the pulse processing task
 
 // Timer ISR callback
 bool IRAM_ATTR timer_isr_callback(void *arg) {
@@ -77,7 +78,7 @@ void init_hw_timer() {
     }
 
     // Create the pulse processing task
-    xTaskCreate(pulse_processing_task, "Pulse Processing Task", 2048, NULL, 5, NULL);
+    xTaskCreate(pulse_processing_task, "Pulse Processing Task", 2048, NULL, 5, &pulseTaskHandle);
 
     // Configure the timer
     timer_config_t config = {
@@ -98,9 +99,25 @@ void init_hw_timer() {
     timer_isr_callback_add(TIMER_GROUP, TIMER_INDEX, timer_isr_callback, NULL, 0);
 
     // Start the timer
-    timer_start(TIMER_GROUP, TIMER_INDEX);
+    //timer_start(TIMER_GROUP, TIMER_INDEX);
 
-    ESP_LOGI(TAG, "Hardware timer initialized with interval: %.2f seconds", TIMER_INTERVAL_SEC);
+    //ESP_LOGI(TAG, "Hardware timer initialized with interval: %.2f seconds", TIMER_INTERVAL_SEC);
+}
+
+void pause_counter_task() {
+    if (pulseTaskHandle != NULL) {
+        vTaskSuspend(pulseTaskHandle); // Delete the pulse processing task
+    }
+    
+    timer_pause(TIMER_GROUP, TIMER_INDEX); // Pause the timer
+}
+
+void resume_counter_task() {
+    if (pulseTaskHandle != NULL) {
+        vTaskResume(pulseTaskHandle); // Resume the pulse processing task
+    }
+    
+    timer_start(TIMER_GROUP, TIMER_INDEX); // Start the timer
 }
 
 #endif // HW_TIMER_H

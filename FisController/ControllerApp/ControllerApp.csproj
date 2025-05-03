@@ -110,10 +110,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Models\" />
-	</ItemGroup>
-
-	<ItemGroup>
 	  <Folder Include="Controllers\" />
 	</ItemGroup>
 
@@ -134,6 +130,9 @@
 
 	<ItemGroup>
 	  <MauiXaml Update="BluetoothPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="EspConfigPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="NavigationSetup.xaml">

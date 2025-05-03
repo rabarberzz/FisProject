@@ -1,4 +1,5 @@
-﻿using ControllerApp.Resources;
+﻿using ControllerApp.Models;
+using ControllerApp.Resources;
 
 namespace ControllerApp.Services
 {
@@ -129,7 +130,7 @@ namespace ControllerApp.Services
 
         public void SetCurrentNavigation(NavigationTemplate template)
         {
-            ClearNaviScreen();
+            //ClearNaviScreen();
             currentNavigation = template;
             _ = SendNavigationData();
         }
@@ -157,6 +158,7 @@ namespace ControllerApp.Services
             _ = SendNavigationData();
         }
 
+        // sends clear command, which releases the navi section of the screen
         public async void ClearNaviScreen()
         {
             await bleService.SendNaviClearCommand();

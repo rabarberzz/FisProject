@@ -1,3 +1,4 @@
+using ControllerApp.Models;
 using ControllerApp.Resources;
 using ControllerApp.Services;
 using ControllerApp.ViewModels;
@@ -18,7 +19,7 @@ namespace ControllerApp
             BindingContext = devicesViewModel;
             this.fisSvc = fisSvc;
 
-            devicesViewModel.DeviceConnectionChanged += OnDeviceConnectionChanged;
+            //devicesViewModel.DeviceConnectionChanged += OnDeviceConnectionChanged;
         }
 
         public void Initialize()
@@ -31,7 +32,7 @@ namespace ControllerApp
 
         private async void OnScanForDevices_Clicked(object sender, EventArgs e)
         {
-            await bleService.StartScan();
+            await bleService.StartScan(false);
         }
 
         private async void OnTest_Clicked(object sender, EventArgs e)
@@ -59,23 +60,7 @@ namespace ControllerApp
             }
         }
 
-        private void OnDeviceConnectionChanged(object? sender, DeviceEventArgs args)
-        {
-            if (args.Device != null)
-            {
-                BleConnectStatusLabel.Dispatcher.Dispatch(() =>
-                {
-                    BleConnectStatusLabel.Text = $"Connected: {args.Device.Name}";
-                });
-            }
-            else
-            {
-                BleConnectStatusLabel.Dispatcher.Dispatch(() =>
-                {
-                    BleConnectStatusLabel.Text = "Disconnected";
-                });
-            }
-        }
+        
 
         private async void SetError(Exception ex)
         {

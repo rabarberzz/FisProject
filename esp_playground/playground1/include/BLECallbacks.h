@@ -1,6 +1,7 @@
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <TLBFISLib.h>
+#include <Preferences.h>
 
 #define NAVI_DATA_CODING "/icon_{0}/address_{1}/time_{2}/total_{3}/turn_{4}";
 
@@ -26,8 +27,14 @@ public:
 };
 
 class ConfigCharacteristicCallbacks: public BLECharacteristicCallbacks {
-    public:
-    ConfigCharacteristicCallbacks() {}
+private:
+    float& speed_ratio;
+    Preferences& preferences;
+    std::function<void(bool)> callback;
+
+public:
+    ConfigCharacteristicCallbacks(float& speedRatio, Preferences& prefs,std::function<void(bool)> cb)
+    : speed_ratio(speedRatio), preferences(prefs), callback(cb) {}
     void onWrite(BLECharacteristic *pCharacteristic) override;
 };
 

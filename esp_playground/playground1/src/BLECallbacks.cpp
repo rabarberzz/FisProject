@@ -7,9 +7,10 @@
 // Private function declarations
 void writeNaviTextInWorkspace(const std::string& value, TLBFISLib& fis);
 void writeRadioTextInWorkspace(const std::string& value, TLBFISLib& fis);
-std::vector<std::string> splitIncomingNaviData(const std::string& s, char delimiter);
+std::vector<std::string> parseIncomingData(const std::string& s, char delimiter);
 void parseIncomingNaviData(const std::string& data, std::string& icon, std::string& address, 
     std::string& time, std::string& total, std::string& turn, std::string& exit, std::string& clear);
+void parseIncomingConfigData(const std::string& data, std::string& speedEna, std::string& speedRatio);
 
 void TextCharacteristicCallbacks::onWrite(BLECharacteristic *pCharacteristic) {
     std::string value = pCharacteristic->getValue();
@@ -62,7 +63,28 @@ void ConfigCharacteristicCallbacks::onWrite(BLECharacteristic *pCharacteristic) 
     std::string value = pCharacteristic->getValue();
     Serial.printf("Config Characteristic written: %s\n", value.c_str());
     
-    // Handle configuration changes here if needed
+    std::string speedEna, speedRatio;
+    parseIncomingConfigData(value, speedEna, speedRatio);
+
+    try {
+        speed_ratio = std::stof(speedRatio);
+    } catch (const std::invalid_argument& e) {
+        Serial.println("Invalid speed ratio value received.");
+        return;
+    } catch (const std::out_of_range& e) {
+        Serial.println("Speed ratio value out of range.");
+        return;
+    }
+
+    bool newEnabled = speedEna == "1" ? true : false;
+
+    if (callback)
+    {
+        callback(newEnabled);
+    }
+
+    preferences.putBool("speed_enabled", newEnabled);
+    preferences.putFloat("speed_ratio", speed_ratio);
 }
 
 void MyBLEServerCallbacks::onConnect(BLEServer* pServer) {
@@ -131,7 +153,7 @@ void writeRadioTextInWorkspace(const std::string& value, TLBFISLib& fis) {
     fis.resetWorkspace();
 }
 
-std::vector<std::string> splitIncomingNaviData(const std::string& s, char delimiter) {
+std::vector<std::string> parseIncomingData(const std::string& s, char delimiter) {
     std::vector<std::string> tokens;
     std::string token;
     std::istringstream tokenStream(s);
@@ -144,7 +166,7 @@ std::vector<std::string> splitIncomingNaviData(const std::string& s, char delimi
 void parseIncomingNaviData(const std::string& data, std::string& icon, 
     std::string& address, std::string& time, std::string& total, 
     std::string& turn, std::string& exit, std::string& clear) {
-    std::vector<std::string> tokens = splitIncomingNaviData(data, '/');
+    std::vector<std::string> tokens = parseIncomingData(data, '/');
     Serial.println(tokens.size());
     if (tokens.size() == 7) {
         icon = tokens[0].substr(5); //substr removes prefixes like "icon_"
@@ -154,5 +176,14 @@ void parseIncomingNaviData(const std::string& data, std::string& icon,
         turn = tokens[4].substr(5);
         exit = tokens[5].substr(5);
         clear = tokens[6].substr(6);
+    }
+}
+
+void parseIncomingConfigData(const std::string& data, std::string& speedEna, std::string& speedRatio) {
+    std::vector<std::string> tokens = parseIncomingData(data, '/');
+
+    if (tokens.size() == 2) {
+        speedEna = tokens[0].substr(6); //substr removes prefix "speed_"
+        speedRatio = tokens[1].substr(6); //substr removes prefix "ratio_"
     }
 }

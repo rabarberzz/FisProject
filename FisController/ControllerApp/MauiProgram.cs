@@ -28,11 +28,12 @@ namespace ControllerApp
             builder.Services.AddSingleton<FisNavigationService>();
             builder.Services.AddSingleton<MapsuiService>();
             builder.Services.AddSingleton<NavigationService>();
-            builder.Services.AddTransient<DevicesViewModel>(provider =>
+            builder.Services.AddSingleton<DevicesViewModel>(provider =>
             {
                 var bleService = provider.GetRequiredService<BleService>();
                 return new DevicesViewModel(bleService);
             });
+            builder.Services.AddSingleton<EspConfigService>();
 
 #if DEBUG
             builder.Logging.AddDebug();

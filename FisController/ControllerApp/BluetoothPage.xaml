@@ -17,7 +17,7 @@
             HorizontalOptions="Center" />
         <Label
             x:Name="BleConnectStatusLabel"
-            Text="ESP device connection status"
+            Text="{Binding BleConnectionStatus}"
             VerticalOptions="Center"
             HorizontalOptions="Center" />
         <Button 
