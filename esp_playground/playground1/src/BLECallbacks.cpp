@@ -30,6 +30,8 @@ void NaviCharacteristicCallbacks::onWrite(BLECharacteristic *pCharacteristic) {
     std::string value = pCharacteristic->getValue();
     Serial.printf("Navigation Characteristic written: %s\n", value.c_str());
 
+    fis.errorFunction(nullptr);
+
     if (value == "clear" && navi_enabled == true)
     {
         fis.turnOff();
@@ -50,6 +52,8 @@ void NaviCharacteristicCallbacks::onWrite(BLECharacteristic *pCharacteristic) {
     }
     
     writeNaviTextInWorkspace(value, fis);
+
+    fisErrorSetter();
 }
 
 void NaviCharacteristicCallbacks::onNotify(BLECharacteristic *pCharacteristic) {
@@ -84,7 +88,9 @@ void ConfigCharacteristicCallbacks::onWrite(BLECharacteristic *pCharacteristic) 
     }
 
     preferences.putBool("speed_enabled", newEnabled);
+    Serial.println("Speed_enabled set: " + newEnabled);
     preferences.putFloat("speed_ratio", speed_ratio);
+    Serial.println("Speed_ratio set: " + String(speed_ratio));
 }
 
 void MyBLEServerCallbacks::onConnect(BLEServer* pServer) {

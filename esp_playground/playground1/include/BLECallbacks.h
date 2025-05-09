@@ -19,9 +19,10 @@ class NaviCharacteristicCallbacks: public BLECharacteristicCallbacks {
 private:
     TLBFISLib& fis;
     bool& navi_enabled; // Flag to indicate if navigation is enabled
+    std::function<void()> fisErrorSetter;
     
 public:
-    NaviCharacteristicCallbacks(TLBFISLib& fis, bool& navi_enabled): fis(fis), navi_enabled(navi_enabled) {}
+    NaviCharacteristicCallbacks(TLBFISLib& fis, bool& navi_enabled, std::function<void()> fisErrorSetter): fis(fis), navi_enabled(navi_enabled), fisErrorSetter(fisErrorSetter) {}
     void onWrite(BLECharacteristic *pCharacteristic) override;
     void onNotify(BLECharacteristic *pCharacteristic) override;
 };

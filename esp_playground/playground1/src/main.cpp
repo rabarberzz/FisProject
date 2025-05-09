@@ -25,6 +25,7 @@ void errorHandler(unsigned long _);
 //void drawSpeedFromPulses(int16_t pulses); // Function to draw speed from pulse count
 void initBLE();
 void onConfigChangedCallback(bool newSpeedEnabled);
+void setUpErrorHandler();
 
 // ==== definitions ====
 // = BLE =
@@ -76,7 +77,7 @@ void setup()
   //FIS.initScreen(SCREEN_SIZE);
   //FIS.clear();
   //FIS.writeRadioText(0, "TEST");
-  //FIS.errorFunction(errorHandler); // fis disruption handler handle
+  FIS.errorFunction(errorHandler); // fis disruption handler handle
   FIS.clearRadioText(); // Clear the radio text area (turns off that section)
   Serial.println("TLBFISLib initialized.");
 
@@ -132,12 +133,25 @@ void beginFunction()
   SPI_INSTANCE.begin();
 }
 
-void errorHandler(unsigned long _)
+void setUpErrorHandler()
 {
-  (void) _;
-  FIS.initScreen(SCREEN_SIZE);
-  FIS.writeMultiLineText(0, 0, "SCREEN GOT\nDISRUPTED");
-  Serial.println("FIS error handler called.");
+  FIS.errorFunction(errorHandler); // Set the error handler function
+}
+
+void errorHandler(unsigned long errorMs)
+{
+  if (navi_enabled)
+  {
+    FIS.initScreen(SCREEN_SIZE);
+    FIS.clear();
+  } 
+  else 
+  {
+    FIS.turnOff(); // Return to the "trip computer" mode
+  }
+  
+  //FIS.writeMultiLineText(0, 0, "SCREEN GOT\nDISRUPTED");
+  Serial.println("FIS error handler called: " + String(errorMs) + " ms");
 }
 
 void initBLE()
@@ -165,7 +179,7 @@ void initBLE()
     BLECharacteristic::PROPERTY_WRITE |
     BLECharacteristic::PROPERTY_NOTIFY
   );
-  naviCharacteristic->setCallbacks(new NaviCharacteristicCallbacks(FIS, navi_enabled)); // Register the navigation callback
+  naviCharacteristic->setCallbacks(new NaviCharacteristicCallbacks(FIS, navi_enabled, setUpErrorHandler)); // Register the navigation callback
 
   BLECharacteristic *configCharacteristic = pService->createCharacteristic(
     configUUID,
